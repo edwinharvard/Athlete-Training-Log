@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Homepage  
+{% endblock %}
+
+{% block main %}
+<h1 class="text-center">{{ user.username | capitalize }}</h1>  <!-- Displays the logged-in user's username, capitalized -->
+
+{% if coach %}
+    <!-- If the user is a coach, show coach-specific options -->
+    <div class="d-flex flex-column align-items-center">
+        <!-- Button to add a workout for athletes -->
+        <a href="/add-workout-coach" class="btn btn-primary mb-3 w-50">Add Workout</a>
+
+        <!-- Button to view all athletes -->
+        <a href="/view-athletes" class="btn btn-secondary mb-3 w-50">See All Athletes</a>
+
+        <!-- Button to update the coach's account -->
+        <a href="/update-account" class="btn btn-secondary mb-3 w-50">Update Account</a>
+
+        <!-- Section for deleting account -->
+        <div class="mt-4 text-center">
+            <label class="form-label d-block mb-2">OPTIONAL: Either delete athlete account or the logged-in coach account</label>
+            <!-- Button to delete the account -->
+            <a href="/delete-account" class="btn btn-danger w-50">Delete Account</a>
+        </div>
+    </div>
+{% else %}
+    <!-- If the user is an athlete, show athlete-specific information and options -->
+    <div class="text-center">
+        <!-- Display athlete's graduation year -->
+        <h3><strong>Graduation Year:</strong> {{ user.graduation_year }}</h3>
+
+        <!-- Display athlete's yearly planned training hours -->
+        <h3><strong>Yearly Planned Training Hours:</strong> {{ user.planned_hours }}</h3>
+
+        <!-- Button to add a workout -->
+        <a href="/add-workout" class="btn btn-primary mt-3 mb-3 w-50">Add Workout</a>
+
+        <!-- Button to view the athlete's training log -->
+        <a href="/athlete" class="btn btn-secondary mb-3 w-50">View Training Log</a>
+    </div>
+{% endif %}
+{% endblock %}

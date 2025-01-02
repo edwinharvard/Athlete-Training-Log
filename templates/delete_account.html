@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Delete Account
+{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+
+    <!-- Button to go back to the homepage -->
+    <div class="text-center mb-4">
+        <a href="/" class="btn btn-secondary">Back to Homepage</a>
+    </div>
+
+    <h1 class="text-center mb-4">Delete Account</h1>
+
+    <form action="/delete-account" method="post" onsubmit="return confirmDeletion();">
+
+        <div class="form-group">
+            <label for="athlete_ids">Select Athlete(s) to Delete:</label>
+            <p>Please select one or more athlete accounts to delete. You can also delete your own coach account.</p>
+
+            <!-- Multi-select dropdown to select athletes -->
+            <select name="athlete_ids" id="athlete_ids" multiple class="form-control w-50 mb-3">
+                {% for athlete in athletes %}
+                    <option value="{{ athlete.id }}">{{ athlete.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Hidden input for verification -->
+        <input type="hidden" name="verification" id="verification">
+
+        <!-- Button to submit the form -->
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-danger btn-lg w-50">Delete Account</button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectElement = document.getElementById('athlete_ids');
+
+        // Create the "Clear Selections" button
+        const resetButton = document.createElement('button');
+        resetButton.textContent = 'Clear Selections';
+        resetButton.type = 'button';
+        
+        resetButton.classList.add('btn', 'btn-secondary', 'w-25', 'mt-2');
+
+        // Add event listener to reset button to clear all selections when clicked
+        resetButton.addEventListener('click', function () {
+            // Deselect all options in the select dropdown
+            for (let option of selectElement.options) {
+                option.selected = false;
+            }
+        });
+
+        // Append the reset button below the athlete selection dropdown
+        selectElement.parentNode.appendChild(resetButton);
+    });
+
+    // JavaScript function to confirm deletion
+    function confirmDeletion() {
+        const selectedAthletes = document.getElementById('athlete_ids').selectedOptions;
+        const verificationInput = document.getElementById('verification');
+
+        // If no athlete is selected, assume the coach wants to delete their own account
+        if (selectedAthletes.length === 0) {
+            const confirmation = confirm("Are you sure you want to delete your coach account? This action cannot be undone.");
+            if (!confirmation) {
+                return false;
+            }
+            verificationInput.value = "true"; // Coach confirmation to delete their own account
+        } else {
+            // If athletes are selected, confirm the deletion of selected athletes
+            const confirmation = confirm("Are you sure you want to delete the selected athlete(s)? This action cannot be undone.");
+            if (!confirmation) {
+                return false;
+            }
+            verificationInput.value = "true"; // Athlete deletion verification
+        }
+
+        return true;
+    }
+</script>
+
+{% endblock %}

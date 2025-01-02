@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    View Athletes
+{% endblock %}
+
+{% block main %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Graduation Year</th>
+            <th>Planned Hours</th>
+            <th>Training Log</th> <!-- New Column -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for athlete in athletes %}
+        <tr>
+            <td>{{ athlete.username }}</td>
+            <td>{{ athlete.graduation_year }}</td>
+            <td>{{ athlete.planned_hours }}</td>
+            <td>
+                <a href="/athlete?id={{ athlete.id }}" class="btn btn-primary">
+                    View Log
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="text-center mb-4">
+    <a href="/" class="btn btn-secondary">Back to Homepage</a>
+</div>
+{% endblock %}

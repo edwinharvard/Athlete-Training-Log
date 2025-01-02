@@ -1,0 +1,96 @@
+/* Global styles */
+:root {
+    /* Define primary colors to be reused throughout the application */
+    --primary-color: crimson; /* Primary color used for accents (buttons, navbar, etc.) */
+    --text-color: #333; /* Default text color */
+    --background-color: #f9f9f9; /* Light background color for the page */
+}
+
+/* Body styling */
+body {
+    margin: 0; /* Remove default margin */
+    font-family: Arial, sans-serif; /* Set the default font to Arial */
+    background-color: var(--background-color); /* Set background color from the root variable */
+    color: var(--text-color); /* Set text color from the root variable */
+}
+
+/* Header styles */
+header {
+    background-color: var(--primary-color); /* Use primary color for header background */
+    color: white; /* Set text color to white */
+    padding: 1rem; /* Add padding around the header */
+    text-align: center; /* Center the header content */
+}
+
+/* Navbar brand styling */
+.navbar-brand {
+    font-weight: bold; /* Make the navbar brand text bold */
+    color: var(--primary-color) !important; /* Set navbar brand color to primary color */
+}
+
+/* Navbar link hover effect */
+.navbar-nav .nav-link:hover {
+    color: var(--primary-color) !important; /* Change link color to primary color on hover */
+}
+
+/* Main content styling */
+main.container {
+    max-width: 800px; /* Limit the width of the main content */
+    margin: auto; /* Center the content horizontally */
+    padding: 2rem; /* Add padding inside the main container */
+    background: white; /* Set background to white */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow around the content */
+    border-radius: 8px; /* Round the corners of the main container */
+}
+
+/* Responsive grid for cards */
+.card-container {
+    display: grid; /* Use CSS grid layout */
+    grid-template-columns: 1fr; /* Initially, display one card per row */
+    gap: 1rem; /* Add space between cards */
+    margin: 2rem auto; /* Center the card container horizontally with top and bottom margin */
+}
+
+/* Individual card styling */
+.card {
+    background-color: white; /* Set card background to white */
+    border: 2px solid var(--primary-color); /* Add border with the primary color */
+    border-radius: 8px; /* Round the corners of the card */
+    padding: 1rem; /* Add padding inside the card */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow around the card */
+    text-align: left; /* Align card text to the left */
+}
+
+/* Responsive adjustments for laptop view (min-width 768px) */
+@media (min-width: 768px) {
+    .card-container {
+        grid-template-columns: repeat(2, 1fr); /* Display two cards per row */
+    }
+}
+
+/* Responsive adjustments for larger screen (min-width 1024px) */
+@media (min-width: 1024px) {
+    .card-container {
+        grid-template-columns: repeat(3, 1fr); /* Display three cards per row */
+    }
+}
+
+/* Button styles */
+button.btn, a.btn {
+    background-color: crimson; /* Set button background to primary color */
+    color: white; /* Set button text color to white */
+    border: none; /* Remove button border */
+    padding: 0.5rem 1rem; /* Add padding inside the button */
+    border-radius: 0.25rem; /* Round the corners of the button */
+    text-align: center; /* Center the text inside the button */
+    text-decoration: none; /* Remove underline from links used as buttons */
+    display: inline-block; /* Make the button an inline block element */
+    font-size: 1rem; /* Set the font size */
+    cursor: pointer; /* Change cursor to pointer to indicate it's clickable */
+    transition: background-color 0.3s; /* Smooth transition for background color change */
+}
+
+/* Button hover effect */
+button.btn:hover, a.btn:hover {
+    background-color: darkred; /* Change background to a darker shade on hover */
+}

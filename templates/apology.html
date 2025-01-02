@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Apology
+{% endblock %}
+
+{% block main %}
+    <!-- Display message like the old apology -->
+    <div class="text-center">
+        <h1 class="mb-4">{{ message }}</h1>
+        <p class="lead">{{ description }}</p>
+
+        <img alt="Logo" class="border img-fluid mb-4 w-25"
+        src="{{ url_for('static', filename='logo.png') }}"
+        title="Logo">
+
+        <div class="text-center mb-4">
+            <a href="/" class="btn btn-secondary">Back to Homepage</a>
+        </div>
+
+    </div>
+{% endblock %}

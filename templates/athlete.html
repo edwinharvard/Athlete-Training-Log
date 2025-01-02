@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Athlete View
+{% endblock %}
+
+<!-- Link to external JavaScript file -->
+<script src="path/to/your/javascriptfile.js"></script>
+
+{% block main %}
+<!-- Display the athlete's username with capitalized first letter -->
+<h1 class="text-center">{{ user.username | capitalize }}</h1>
+
+<!-- Check if there are workouts available to display -->
+{% if workouts %}
+    <!-- Table to display workout details -->
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <!-- Table headers for each workout field -->
+                <th>Date</th>
+                <th>Workout Title</th>
+                <th>Planned Hours</th>
+                <th>Completed Hours</th>
+                <th>Workout Type</th>
+                <th>Comments</th>
+                <th></th> <!-- Empty column for Update button -->
+                <th></th> <!-- Empty column for Delete button -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Loop through each workout and display its details -->
+            {% for workout in workouts %}
+            <tr>
+                <!-- Display workout details -->
+                <td>{{ workout.date }}</td>
+                <td>{{ workout.title }}</td>
+                <td>{{ workout.planned_hours }}</td>
+                <td>{{ workout.completed_hours }}</td>
+                <td>{{ workout.workout_type }}</td>
+                <td>{{ workout.comments }}</td>
+                <!-- Button for updating workout -->
+                <td><a href="/update-workout?id={{ workout.id }}" class="btn btn-warning">Update Workout</a></td>
+
+                <!-- Conditional check to determine if the user is a coach (to handle workout deletion) -->
+                {% if current_user.coach == 1 %}
+                    <!-- Coach's route for deleting workout -->
+                    <td><a href="/delete-workout-coach?id={{ workout.id }}" class="btn btn-danger">Delete Workout</a></td>
+                {% else %}
+                    <!-- Athlete's route for deleting workout -->
+                    <td><a href="/delete-workout?id={{ workout.id }}" class="btn btn-danger">Delete Workout</a></td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <!-- Message when no workouts are found -->
+    <div class="alert alert-info mt-4 text-center">
+        <strong>No workouts found.</strong> Start adding some workouts to your log!
+    </div>
+{% endif %}
+
+<!-- Button to return to homepage -->
+<div class="text-center mb-4">
+    <a href="/" class="btn btn-secondary">Back to Homepage</a>
+</div>
+{% endblock %}

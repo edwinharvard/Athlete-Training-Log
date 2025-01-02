@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <h1 class="text-center mb-4">Register</h1>
+    <form action="/register" method="post" class="mx-auto" style="max-width: 400px;">
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input class="form-control" name="password" placeholder="Password" type="password" required>
+        </div>
+        <div class="mb-3">
+            <label for="confirmation" class="form-label">Confirm Password</label>
+            <input class="form-control" name="confirmation" placeholder="Confirm Password" type="password" required>
+        </div>
+        <div class="mb-3">
+            <label for="planned_hours" class="form-label">Planned Training Hours</label>
+            <input class="form-control" name="planned_hours" placeholder="Planned Training Hours" type="number" min="0" max="8760">
+        </div>
+        <div class="mb-3">
+            <label for="graduation_year" class="form-label">Graduation Year</label>
+            <input class="form-control" name="graduation_year" placeholder="Graduation Year" type="number" min="2025" max="2028">
+        </div class="mb-3">
+            <label for="coach" class="form-label">Is Coach?</label>
+            <input type="checkbox" class="form-check-input" name="coach" value="coach" id="coach">
+        </div>
+        <button class="btn btn-primary w-100" type="submit">Register</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Add Workout
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="text-center mb-4">
+        <a href="/" class="btn btn-secondary">Back to Homepage</a>
+    </div>
+    <h1 class="text-center mb-4">Add Workout</h1>
+    <form action="/add-workout" method="post" class="mx-auto" style="max-width: 600px;">
+        <div class="mb-3">
+            <label for="completed_hours" class="form-label">Completed Hours</label>
+            <input type="number" name="completed_hours" id="completed_hours" class="form-control" placeholder="Completed Hours" min="0" >
+        </div>
+        <div class="mb-3">
+            <label for="planned_hours" class="form-label">Planned Hours</label>
+            <input type="number" name="planned_hours" id="planned_hours" class="form-control" placeholder="Planned Hours" min="0" >
+        </div>
+        <div class="mb-3">
+            <label for="workout_type" class="form-label">Workout Type</label>
+            <input type="text" name="workout_type" id="workout_type" class="form-control" placeholder="Workout Type" required>
+        </div>
+        <div class="mb-3">
+            <label for="distance" class="form-label">Distance (if applicable)</label>
+            <input type="number" name="distance" id="distance" class="form-control" placeholder="Distance" min="0">
+        </div>
+        <div class="mb-3">
+            <label for="comments" class="form-label">Comments (if applicable)</label>
+            <textarea name="comments" id="comments" class="form-control" rows="3" placeholder="Comments"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" name="date" id="date" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="title" class="form-label">Workout Title (if applicable)</label>
+            <input type="text" name="title" id="title" class="form-control" placeholder="Title">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Create Workout</button>
+    </form>
+</div>
+{% endblock %}

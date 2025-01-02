@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Delete Workout
+{% endblock %}
+
+{% block main %}
+    <div class="container mt-4">
+
+        <h1 class="text-center mb-4">Are you sure you want to delete this workout?</h1>
+
+        <!-- Button to go back to the homepage with added margin below -->
+        <div class="text-center mt-4 mb-3">
+            <a href="/" class="btn btn-secondary w-50">Cancel</a>
+        </div>
+
+
+        <form action="/delete-workout-coach" method="post" class="d-flex justify-content-center flex-column align-items-center">
+            <input type="hidden" name="workout_id" id="workout_id" value="{{ workout_id }}">
+
+
+            <!-- Submit button to delete workout -->
+            <button type="submit" class="btn btn-danger btn-lg w-50 mb-3">Delete Workout</button>
+        </form>
+    </div>
+{% endblock %}
