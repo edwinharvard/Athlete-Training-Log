@@ -1,7 +1,10 @@
 import requests
-from cs50 import SQL
+import sqlite3
 from flask import redirect, render_template, session
 from functools import wraps
+
+sqliteConnection = sqlite3.connect('training_log.db')
+cursor = sqliteConnection.cursor()
 
 # Function to render an apology message with an optional error code
 def apology(message, code=400):
@@ -53,14 +56,13 @@ def coach_account_required(f):
     """
     Decorate routes to require coach account.
     This ensures only users with a coach account can access certain pages.
-    """
-    db = SQL("sqlite:///training_log.db")  # Database connection
+    """  # Database connection
 
     @wraps(f)
     @login_required  # First check if the user is logged in
     def decorated_function(*args, **kwargs):
         # Query the database to check if the logged-in user is a coach
-        coach_status = db.execute("SELECT coach FROM users WHERE id = ?", session.get("user_id"))
+        coach_status = cursor.execute("SELECT coach FROM users WHERE id = ?", session.get("user_id"))
         if coach_status[0]['coach'] != 1:  # If the user is not a coach (coach value should be 1)
             return apology("must have a coach's account", 401)  # Show an apology with an error message
         return f(*args, **kwargs)

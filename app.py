@@ -1,6 +1,6 @@
 import os
+import sqlite3
 
-from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -13,7 +13,8 @@ app.secret_key = 'ryerson_project2'
 if __name__ == '__main__':
     app.run(debug=True)
 
-db = SQL("sqlite:///training_log.db")
+sqliteConnection = sqlite3.connect('training_log.db')
+db = sqliteConnection.cursor()
 
 
 @app.after_request
