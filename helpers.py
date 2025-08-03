@@ -3,6 +3,13 @@ import requests
 import sqlite3
 from flask import redirect, render_template, session
 from functools import wraps
+import json
+
+with open("config.json", "r") as config_file:
+    config = json.load(config_file)
+
+CLIENT_ID = config["client_id"]
+CLIENT_SECRET = config["client_secret"]
 
 # Function to render an apology message with an optional error code
 def apology(message, code=400):
@@ -70,7 +77,7 @@ def coach_account_required(f):
 
     return decorated_function
 
-def refresh_access_token(client_id, client_secret, athlete_id):
+def refresh_access_token(athlete_id):
     """
     Refresh a short-lived access token for the specified athlete.
 
@@ -100,8 +107,8 @@ def refresh_access_token(client_id, client_secret, athlete_id):
         # Use the refresh token to request a new access token from Strava
         url = "https://www.strava.com/api/v3/oauth/token"
         data = {
-            "client_id": client_id,
-            "client_secret": client_secret,
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
             "grant_type": "refresh_token",
             "refresh_token": refresh_token_code
         }
@@ -135,7 +142,7 @@ def refresh_access_token(client_id, client_secret, athlete_id):
 
 
 
-def get_valid_access_token(client_id, client_secret, athlete_id):
+def get_valid_access_token(athlete_id):
     """
     Retrieve a valid short-lived access token, refreshing it if expired.
 
@@ -179,7 +186,7 @@ def get_valid_access_token(client_id, client_secret, athlete_id):
         return {"error": f"Database error: {db_error}"}
 
 
-def strava_api_request(endpoint, client_id, client_secret, athlete_id):
+def strava_api_request(athlete_id):
     """
     Make a Strava API request using a valid access token.
 
@@ -192,11 +199,11 @@ def strava_api_request(endpoint, client_id, client_secret, athlete_id):
     Returns:
         dict: The API response or an error message.
     """
-    access_token = get_valid_access_token(client_id, client_secret, athlete_id)
+    access_token = get_valid_access_token(athlete_id)
     if "error" in access_token:
         return {"error": access_token["error"]}
 
-    url = f"https://www.strava.com/api/v3/{endpoint}"
+    url = f"https://www.strava.com/api/v3/oath/token"
     headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
