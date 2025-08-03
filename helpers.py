@@ -1,7 +1,7 @@
 import datetime
 import requests
 import sqlite3
-from flask import redirect, render_template, session
+from flask import g, redirect, render_template, session, current_app
 from functools import wraps
 import json
 
@@ -10,6 +10,26 @@ with open("config.json", "r") as config_file:
 
 CLIENT_ID = config["client_id"]
 CLIENT_SECRET = config["client_secret"]
+
+
+def get_db():
+    """Return a SQLite DB connection for this request, creating if needed."""
+    if "db" not in g:
+        # You can omit check_same_thread since each request is single-threaded here
+        g.db = sqlite3.connect(
+            current_app.config["DATABASE"], 
+            # (optional) detect types, make rows dict-like:
+            detect_types=sqlite3.PARSE_DECLTYPES
+        )
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
+def close_db(e=None):
+    """Close the DB at the end of request."""
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
 
 # Function to render an apology message with an optional error code
 def apology(message, code=400):

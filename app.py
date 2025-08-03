@@ -3,18 +3,18 @@ import sqlite3
 
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
-from werkzeug.security import check_password_hash, generate_password_hash, get_athlete_data
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, coach_account_required, refresh_access_token
+from helpers import apology, login_required, coach_account_required, refresh_access_token, close_db, get_db
 
 app = Flask(__name__)
 app.secret_key = 'ryerson_project2'
 
+app.config["DATABASE"] = "training_log.db"
+app.teardown_appcontext(close_db)
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-sqliteConnection = sqlite3.connect('training_log.db')
-db = sqliteConnection.cursor()
 
 
 @app.after_request
@@ -31,6 +31,7 @@ def register():
     """Register user"""
 
     if request.method == "POST":
+        db = get_db()
         # Ensure username was submitted
         username = request.form.get("username")
         password = request.form.get("password")
@@ -94,6 +95,7 @@ def login():
 
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
+        db = get_db()
         # Ensure username was submitted
         if not request.form.get("username"):
             return apology("must provide username", 403)
@@ -141,6 +143,7 @@ def update_account():
     """Update account information for the logged-in user or an athlete"""
 
     if request.method == "POST":
+        db = get_db()
         # Retrieve the form data submitted by the user
         athlete_id = request.form.getlist("athlete_ids")  # List of selected athlete IDs
         username = request.form.get("username")  # New username input
@@ -190,6 +193,7 @@ def update_account():
 
 
     else:
+        db = get_db()
         # If the request method is GET, render the update account page
         # Retrieve all athletes that the current user (coach) can manage
         athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", 0)
@@ -204,6 +208,7 @@ def add_workout():
     """Create a new workout entry"""
 
     if request.method == "POST":
+        db = get_db()
         completed_hours = request.form.get("completed_hours")
         planned_hours = request.form.get("planned_hours")
         workout_type = request.form.get("workout_type")
@@ -252,6 +257,7 @@ def add_workout_coach():
     """create workout"""
 
     if request.method == "POST":
+        db = get_db()
         completed_hours = request.form.get("completed_hours") or 'N/A'
         planned_hours = request.form.get("planned_hours") or 'N/A'
         workout_type = request.form.get("workout_type") or 'N/A'
@@ -290,6 +296,7 @@ def add_workout_coach():
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
+        db = get_db()
         athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", 0)
         return render_template("add_workout_coach.html", athletes=athletes)
 
@@ -300,6 +307,7 @@ def update_workout():
     """Update workout information"""
 
     if request.method == "POST":
+        db = get_db()
         # Retrieve form data
         workout_id = request.form.get("workout_id")
         completed_hours = request.form.get("completed_hours")
@@ -359,6 +367,7 @@ def update_workout():
 def update_workout_coach():
     """update workout coach"""
     if request.method == "POST":
+        db = get_db()
         workout_id = request.form.get("workout_id")
         completed_hours = request.form.get("completed_hours")
         planned_hours = request.form.get("planned_hours")
@@ -411,6 +420,7 @@ def index_athlete():
     """Show all athlete workouts"""
 
     if request.method == "GET":
+        db = get_db()
         current_user = session["user_id"]
         current_user = [session["user_id"]]  # Current logged-in user's ID
 
@@ -443,6 +453,7 @@ def view_athletes():
     """Show all athletes"""
 
     if request.method == "GET":
+        db = get_db()
         # Query all athletes (users who are not coaches) ordered by graduation year
         athletes = db.execute(
             "SELECT * FROM users WHERE coach = ? ORDER BY graduation_year DESC", 0)
@@ -457,6 +468,7 @@ def delete_workout():
     """Delete workout"""
 
     if request.method == "POST":
+        db = get_db()
         workout_id = request.form.get("workout_id")  # Get the workout ID from form data
         current_user = session["user_id"]  # Get the current user's ID
 
@@ -483,6 +495,7 @@ def delete_workout():
 def delete_workout_coach():
     """delete workout from coach side"""
     if request.method == "POST":
+        db = get_db()
         workout_id = request.form.get("workout_id")
 
         if not workout_id:
@@ -493,6 +506,7 @@ def delete_workout_coach():
         return redirect("/")
 
     else:
+        db = get_db()
         workout_id = request.args.get("id")  # Get workout_id from query params
         if not workout_id:
             return apology("Error: Workout ID is missing!", 400)
@@ -507,6 +521,7 @@ def delete_account():
     """Delete account"""
 
     if request.method == "POST":
+        db = get_db()
         athlete_id = request.form.get("athlete_ids")  # Get the selected athlete ID
         verification = request.form.get("verification")  # Verify the action before proceeding
 
@@ -526,6 +541,7 @@ def delete_account():
         return redirect("/")  # Redirect to the home page after account deletion
 
     else:
+        db = get_db()
         # If the request method is GET, fetch athletes' data and show the deletion form
         athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", 0)
         return render_template("delete_account.html", athletes=athletes)
@@ -538,6 +554,7 @@ def index():
     """Render homepage"""
 
     if request.method == "GET":
+        db = get_db()
         current_user = session["user_id"]  # Get the ID of the logged-in user
         coach = False  # Default to not being a coach
 
@@ -547,7 +564,9 @@ def index():
         # Check if the user is a coach
         if user[0]["coach"] == 1:
             coach = True  # Set coach to True if the user is a coach
-
-        # Render the homepage template, passing user data and coach status
-        return render_template("index.html", user=user[0], coach=coach)
+            return render_template("index.html", user=user[0], coach=coach)
+        else:
+            workout = db.execute("SELECT SUM(completed_hours) FROM workout WHERE user_id = ?", current_user)
+            # Render the homepage template, passing user data and coach status
+            return render_template("index.html", user=user[0], coach=coach, workout=workout[0])
 
