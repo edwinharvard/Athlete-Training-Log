@@ -767,6 +767,12 @@ def athlete_home():
     db = get_db()
     uid = session["user_id"]
 
+    # Check if user has Strava connection
+    strava_connected = db.execute(
+        "SELECT 1 FROM refresh_tokens WHERE athlete_id = ?", 
+        (uid,)
+    ).fetchone() is not None
+
     # 1) Build the 7-day window
     today = date.today()
     week_dates = [today - timedelta(days=i) for i in reversed(range(7))]
@@ -846,7 +852,62 @@ def athlete_home():
             "hours_by_type": hours_by_type
         },
         week_dates=week_dates,
-        workouts_by_date=workouts_by_date
+        workouts_by_date=workouts_by_date,
+        strava_connected=strava_connected
+    )
+
+
+@app.route("/fetch-strava-activities", methods=["GET"])
+@login_required
+def fetch_activities():
+    athlete_id = session["user_id"]
+    app.logger.debug(f"Fetching activities for athlete {athlete_id}")
+
+    # Fetch activities using helper
+    activities = fetch_strava_activities(athlete_id)
+    app.logger.debug(f"Received {len(activities)} activities from Strava")
+
+    if not activities:
+        flash("No activities found or error accessing Strava", "warning")
+        return render_template("fetch_strava_activities.html", activities=[])
+
+    # Process and store activities
+    db = get_db()
+    stored_count = 0
+
+    for act in activities:
+        try:
+            # Convert elapsed time from seconds to hours
+            hours = float(act["elapsed_time"]) / 3600
+            
+            # Insert activity into database
+            db.execute("""
+                INSERT OR IGNORE INTO workout 
+                (user_id, completed_hours, workout_type, date, distance, title)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                athlete_id,
+                hours,
+                act["type"],
+                act["start_date_local"][:10],  # Just the date part
+                float(act.get("distance", 0)) / 1000,  # Convert meters to kilometers
+                act["name"]
+            ))
+            stored_count += 1
+            
+        except Exception as e:
+            app.logger.error(f"Error processing activity: {e}")
+            continue
+
+    db.commit()
+    
+    if stored_count > 0:
+        flash(f"Successfully imported {stored_count} activities from Strava!", "success")
+    
+    return render_template(
+        "fetch_strava_activities.html", 
+        activities=activities,
+        stored_count=stored_count
     )
 
 

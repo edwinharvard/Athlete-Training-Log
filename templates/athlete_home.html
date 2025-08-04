@@ -92,10 +92,17 @@
   </div>
 </div>
 
-<!-- filepath: /Users/edwinryerson/Downloads/project/templates/athlete_home.html -->
-<div class="text-center mb-4">
-  <a href="/strava/auth" class="btn btn-primary">Connect Strava</a>
-  <a href="/strava/sync" class="btn btn-secondary">Sync Workouts</a>
+<!-- Add this where you want the Strava connect button to appear -->
+<div class="strava-connect">
+  {% if not strava_connected %}
+  <a href="{{ url_for('strava_auth') }}" class="btn btn-primary">
+      Connect with Strava
+  </a>
+  {% else %}
+  <a href="{{ url_for('fetch_activities') }}" class="btn btn-success">
+      Sync Strava Activities
+  </a>
+  {% endif %}
 </div>
 
 <!-- Chart.js -->

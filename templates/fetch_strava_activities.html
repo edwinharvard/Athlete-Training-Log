@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <h2>Strava Activities</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if activities %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Duration (hours)</th>
+                    <th>Distance (km)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activities %}
+                <tr>
+                    <td>{{ activity.name }}</td>
+                    <td>{{ activity.start_date_local[:10] }}</td>
+                    <td>{{ activity.type }}</td>
+                    <td>{{ "%.2f"|format(activity.elapsed_time / 3600) }}</td>
+                    <td>{{ "%.2f"|format(activity.distance / 1000) if activity.distance else "N/A" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No activities found.</p>
+    {% endif %}
+
+    <a href="/athlete-home" class="btn btn-primary">Back to Dashboard</a>
+{% endblock %}

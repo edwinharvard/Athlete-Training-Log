@@ -4,6 +4,7 @@ import sqlite3
 from flask import g, redirect, render_template, session, current_app
 from functools import wraps
 import json
+import logging
 
 with open("config.json", "r") as config_file:
     config = json.load(config_file)
@@ -154,8 +155,9 @@ def refresh_access_token(athlete_id, authorization_code=None):
 def get_valid_access_token(athlete_id):
     db = get_db()
 
+    # Update the column name to match the table structure
     row = db.execute("""
-        SELECT short_lived_access_token_code, expires_at
+        SELECT access_token, expires_at
         FROM short_lived_access_tokens
         WHERE athlete_id = ?
     """, (athlete_id,)).fetchone()
@@ -163,7 +165,9 @@ def get_valid_access_token(athlete_id):
     if not row:
         return {"error": "No token on file"}
 
-    access_token, expires_at = row
+    access_token = row["access_token"]  # Updated column name
+    expires_at = row["expires_at"]
+    
     now_ts = int(datetime.datetime.now().timestamp())
 
     if now_ts >= expires_at:
@@ -192,15 +196,21 @@ def strava_api_request(athlete_id, endpoint="athlete"):
 
 def fetch_strava_activities(athlete_id):
     token = get_valid_access_token(athlete_id)
-    if isinstance(token, dict) and token.get("error"):
+    if isinstance(token, dict) and "error" in token:
+        current_app.logger.error(f"Token error: {token['error']}")
         return []
 
     url = "https://www.strava.com/api/v3/activities"
-    response = requests.get(url, headers={"Authorization": f"Bearer {token}"})
-    if response.status_code != 200:
+    try:
+        response = requests.get(
+            url, 
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        current_app.logger.error(f"Strava API error: {str(e)}")
         return []
-
-    return response.json()
 
 
 def init_db():
