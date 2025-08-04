@@ -94,7 +94,7 @@ def coach_account_required(f):
 def refresh_access_token(athlete_id):
     db = get_db()
 
-    # grab the refresh token
+    # Grab the refresh token from the database
     row = db.execute(
         "SELECT refresh_token_code FROM refresh_tokens WHERE athlete_id = ?",
         (athlete_id,)
@@ -104,28 +104,30 @@ def refresh_access_token(athlete_id):
 
     refresh_token = row["refresh_token_code"]
 
-    # hit Strava
+    # Request a new access token from Strava
     resp = requests.post(
         "https://www.strava.com/api/v3/oauth/token",
         data={
-            "client_id":     CLIENT_ID,
+            "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
-            "grant_type":    "refresh_token",
+            "grant_type": "refresh_token",
             "refresh_token": refresh_token
         }
     )
-    resp.raise_for_status()
+    if resp.status_code != 200:
+        return {"error": "Failed to refresh access token"}
+
     token_data = resp.json()
 
+    # Save the new access token and expiration time in the database
     new_token = token_data["access_token"]
-    expires   = token_data["expires_at"]
+    expires = token_data["expires_at"]
 
-    # update our table using the same connection
     db.execute("""
         INSERT OR REPLACE INTO short_lived_access_tokens
-            (athlete_id, scope, short_lived_access_token_code, expires_at)
-        VALUES (?, ?, ?, ?)
-    """, (athlete_id, True, new_token, expires))
+            (athlete_id, short_lived_access_token_code, expires_at)
+        VALUES (?, ?, ?)
+    """, (athlete_id, new_token, expires))
     db.commit()
 
     return {"access_token": new_token, "expires_at": expires}
@@ -136,8 +138,8 @@ def get_valid_access_token(athlete_id):
 
     row = db.execute("""
         SELECT short_lived_access_token_code, expires_at
-          FROM short_lived_access_tokens
-         WHERE athlete_id = ?
+        FROM short_lived_access_tokens
+        WHERE athlete_id = ?
     """, (athlete_id,)).fetchone()
 
     if not row:
@@ -147,7 +149,7 @@ def get_valid_access_token(athlete_id):
     now_ts = int(datetime.datetime.now().timestamp())
 
     if now_ts >= expires_at:
-        # refresh and return
+        # Refresh the token if it has expired
         data = refresh_access_token(athlete_id)
         if "error" in data:
             return data
@@ -168,3 +170,44 @@ def strava_api_request(athlete_id, endpoint="athlete"):
     resp = requests.get(url, headers={"Authorization": f"Bearer {token}"})
     resp.raise_for_status()
     return resp.json()
+
+
+def fetch_strava_activities(athlete_id):
+    token = get_valid_access_token(athlete_id)
+    if isinstance(token, dict) and token.get("error"):
+        return []
+
+    url = "https://www.strava.com/api/v3/activities"
+    response = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+    if response.status_code != 200:
+        return []
+
+    return response.json()
+
+
+def init_db():
+    """Initialize the database with required tables."""
+    db = get_db()
+    
+    # Drop existing tables if they exist
+    db.execute('DROP TABLE IF EXISTS refresh_tokens')
+    db.execute('DROP TABLE IF EXISTS short_lived_access_tokens')
+    
+    # Create tables for Strava OAuth tokens
+    db.execute('''
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+        athlete_id INTEGER PRIMARY KEY,
+        refresh_token_code TEXT NOT NULL,
+        scope TEXT NOT NULL
+    )
+    ''')
+    
+    db.execute('''
+    CREATE TABLE IF NOT EXISTS short_lived_access_tokens (
+        athlete_id INTEGER PRIMARY KEY,
+        access_token TEXT NOT NULL,
+        expires_at INTEGER NOT NULL
+    )
+    ''')
+    
+    db.commit()

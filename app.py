@@ -2,15 +2,31 @@ import os
 import sqlite3
 
 from flask import Flask, flash, redirect, render_template, request, session
+import requests
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, coach_account_required, refresh_access_token, close_db, get_db
+from helpers import apology, login_required, coach_account_required, refresh_access_token, close_db, get_db, fetch_strava_activities, init_db
 
 app = Flask(__name__)
 app.secret_key = 'ryerson_project2'
-
 app.config["DATABASE"] = "training_log.db"
+app.config['DEBUG'] = True  # Add this line
+app.config['ENV'] = 'development'  # Add this line
+
+# Update your logging configuration
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 app.teardown_appcontext(close_db)
+with app.app_context():
+    init_db()
+
+
+@app.before_request
+def log_request_info():
+    app.logger.debug(f"Request URL: {request.url}")
+    app.logger.debug(f"Request Headers: {request.headers}")
+    app.logger.debug(f"Request Args: {request.args}")
 
 
 @app.after_request
@@ -648,6 +664,7 @@ def coach_home():
 
 
 from datetime import date, timedelta
+import json
 
 @app.route("/athlete-home")
 @login_required
@@ -739,7 +756,121 @@ def athlete_home():
     )
 
 
+@app.route("/strava/auth")
+@login_required
+def strava_auth():
+    if "user_id" not in session:
+        return apology("You must log in to access this page", 403)
 
+    # Load configuration from config.json
+    with open("config.json") as config_file:
+        config = json.load(config_file)
+
+    client_id = config.get("client_id")
+    # Use 127.0.0.1 instead of localhost
+    redirect_uri = config.get("REDIRECT_URI", "http://127.0.0.1:5000/strava/callback")
+    scope = "activity:read_all"
+
+    print(f"Client ID: {client_id}, Redirect URI: {redirect_uri}")
+    
+    auth_url = f"https://www.strava.com/oauth/authorize?client_id={client_id}&response_type=code&redirect_uri={redirect_uri}&scope={scope}"
+    app.logger.debug("Strava OAuth URL → %s", auth_url)
+    return redirect(auth_url)
+
+
+@app.route("/strava/callback")
+@login_required
+def strava_callback():
+    app.logger.debug("--------------------")
+    app.logger.debug("Callback route triggered")
+    code = request.args.get("code")
+    scope = request.args.get("scope", "")
+    
+    if not code:
+        app.logger.error("Authorization failed: No code received")
+        return apology("Authorization failed", 400)
+
+    app.logger.debug(f"Authorization code received: {code}")
+
+    with open("config.json") as config_file:
+        config = json.load(config_file)
+
+    client_id = config.get("client_id")
+    client_secret = config.get("client_secret")
+
+    # Exchange the code for an access token
+    response = requests.post(
+        "https://www.strava.com/api/v3/oauth/token",
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "grant_type": "authorization_code"
+        }
+    )
+
+    if response.status_code != 200:
+        app.logger.error(f"Failed to retrieve access token: {response.text}")
+        return apology("Failed to retrieve access token", 400)
+
+    token_data = response.json()
+    access_token = token_data["access_token"]
+    refresh_token = token_data["refresh_token"]
+    expires_at = token_data["expires_at"]
+
+    app.logger.debug(f"Access Token: {access_token}, Refresh Token: {refresh_token}, Expires At: {expires_at}")
+
+    # Save tokens to the database with scope
+    db = get_db()
+    db.execute("""
+        INSERT OR REPLACE INTO refresh_tokens 
+        (athlete_id, refresh_token_code, scope)
+        VALUES (?, ?, ?)
+    """, (session["user_id"], refresh_token, scope))
+    
+    db.execute("""
+        INSERT OR REPLACE INTO short_lived_access_tokens 
+        (athlete_id, access_token, expires_at)
+        VALUES (?, ?, ?)
+    """, (session["user_id"], access_token, expires_at))
+    
+    db.commit()
+
+    return redirect("/athlete-home")
+
+
+@app.route("/strava/sync")
+@login_required
+def strava_sync():
+    activities = fetch_strava_activities(session["user_id"])
+    db = get_db()
+
+    for activity in activities:
+        db.execute("""
+            INSERT OR IGNORE INTO workout (user_id, completed_hours, workout_type, date, distance, title)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            session["user_id"],
+            activity["elapsed_time"] / 3600,  # Convert seconds to hours
+            activity["type"],
+            activity["start_date_local"].split("T")[0],
+            activity.get("distance", 0) / 1000,  # Convert meters to kilometers
+            activity["name"]
+        ))
+    db.commit()
+
+    return redirect("/athlete-home")
+
+@app.route("/debug-tokens")
+@login_required
+def debug_tokens():
+    db = get_db()
+    refresh_token = db.execute("SELECT * FROM refresh_tokens WHERE athlete_id = ?", (session["user_id"],)).fetchone()
+    access_token = db.execute("SELECT * FROM short_lived_access_tokens WHERE athlete_id = ?", (session["user_id"],)).fetchone()
+    return {
+        "refresh_token": refresh_token,
+        "access_token": access_token
+    }
 
 # *** finally, at the very bottom of the file: ***
 if __name__ == "__main__":
