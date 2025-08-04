@@ -1,35 +1,53 @@
 {% extends "layout.html" %}
 
-{% block title %}
-    View Athletes
-{% endblock %}
+{% block title %}View Athletes{% endblock %}
 
 {% block main %}
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Graduation Year</th>
-            <th>Planned Hours</th>
-            <th>Training Log</th> <!-- New Column -->
-        </tr>
-    </thead>
-    <tbody>
-        {% for athlete in athletes %}
-        <tr>
-            <td>{{ athlete.username }}</td>
-            <td>{{ athlete.graduation_year }}</td>
-            <td>{{ athlete.planned_hours }}</td>
-            <td>
-                <a href="/athlete?id={{ athlete.id }}" class="btn btn-primary">
+<div class="container-fluid mt-4 px-2">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header" style="background-color: crimson; color: #fff;">
+          <h4 class="mb-0">Athlete List</h4>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Graduation Year</th>
+                <th>Planned Hours</th>
+                <th>Training Log</th>
+                <th>Actions</th> <!-- New column for update button -->
+              </tr>
+            </thead>
+            <tbody>
+              {% for athlete in athletes %}
+              <tr>
+                <td>{{ athlete.username }}</td>
+                <td>{{ athlete.graduation_year }}</td>
+                <td>{{ athlete.planned_hours }}</td>
+                <td>
+                  <a href="/athlete?id={{ athlete.id }}" class="btn btn-secondary btn-sm">
                     View Log
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<div class="text-center mb-4">
-    <a href="/" class="btn btn-secondary">Back to Homepage</a>
+                  </a>
+                </td>
+                <td>
+                  <!-- Button to go to Update Athlete Account page -->
+                  <a href="/update-athlete-account?id={{ athlete.id }}" class="btn btn-primary btn-sm">
+                    Edit Account
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="text-center mt-3">
+            <a href="/" class="btn btn-outline-secondary">Back to Homepage</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -4,8 +4,10 @@
 
 {% block main %}
 <div class="container mt-4">
-  <!-- Welcome and athlete summary -->
-  <h1 class="text-center mb-2">{{ user.username|capitalize }}</h1>
+  <!-- Welcome Header -->
+  <h1 class="text-center mb-2">Welcome, {{ user.username|capitalize }}</h1>
+
+  <!-- Athlete Summary (only for athletes) -->
   {% if not coach %}
     <div class="text-center mb-4">
       <span class="me-3"><strong>Graduation Year:</strong> {{ user.graduation_year }}</span>
@@ -13,9 +15,9 @@
     </div>
   {% endif %}
 
+  <!-- Action Cards -->
   <div class="row gy-4">
     {% if coach %}
-      <!-- Coach Cards -->
       <div class="col-12 col-md-6 col-lg-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
@@ -25,7 +27,6 @@
           </div>
         </div>
       </div>
-
       <div class="col-12 col-md-6 col-lg-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
@@ -35,17 +36,6 @@
           </div>
         </div>
       </div>
-
-      <div class="col-12 col-md-6 col-lg-3">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title">Update Accounts</h5>
-            <p class="card-text flex-grow-1">Edit athlete or coach account details.</p>
-            <a href="/update-account" class="btn btn-secondary mt-auto">Update Accounts</a>
-          </div>
-        </div>
-      </div>
-
       <div class="col-12 col-md-6 col-lg-3">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
@@ -55,9 +45,7 @@
           </div>
         </div>
       </div>
-
     {% else %}
-      <!-- Athlete Cards (no profile card) -->
       <div class="col-12 col-md-6 col-lg-6">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
@@ -67,7 +55,6 @@
           </div>
         </div>
       </div>
-
       <div class="col-12 col-md-6 col-lg-6">
         <div class="card h-100 shadow-sm">
           <div class="card-body d-flex flex-column">
@@ -77,18 +64,19 @@
           </div>
         </div>
       </div>
-
     {% endif %}
   </div>
 
-  <!-- Aggregate Data Section Placeholder -->
+  <!-- Aggregate Data Only for Athletes -->
+  {% if not coach %}
   <div class="mt-5">
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Aggregate Training Data</h5>
-        <p class="card-text"><!-- TODO: Insert charts or summaries here to display aggregated hours, workouts by type, trends, etc. --></p>
+        <p class="card-text"><!-- TODO: Add aggregated charts or summaries here --></p>
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -15,11 +15,12 @@
 
     <!-- Form for updating the account details -->
     <form action="/update-account" method="post" class="mx-auto" style="max-width: 400px;">
+        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
 
         <!-- Input field for the username -->
         <div class="mb-3">
             <label for="username" class="form-label">Username</label>
-            <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" required>
+            <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" value="{{ athlete.username }}" type="text" required>
         </div>
 
         <!-- Input field for the password -->
@@ -37,29 +38,13 @@
         <!-- Input field for planned training hours -->
         <div class="mb-3">
             <label for="planned_hours" class="form-label">Planned Training Hours</label>
-            <input class="form-control" name="planned_hours" placeholder="Planned Training Hours" type="number" min="0" max="8760">
+            <input class="form-control" name="planned_hours" placeholder="Planned Training Hours" value="{{ athlete.planned_hours }}"type="number" min="0" max="8760">
         </div>
 
         <!-- Input field for the athlete's graduation year -->
         <div class="mb-3">
             <label for="graduation_year" class="form-label">Graduation Year</label>
-            <input class="form-control" name="graduation_year" placeholder="Graduation Year" type="number" min="2025" max="2028">
-        </div>
-
-        <!-- Dropdown to select athletes (only visible to coaches) -->
-        <div class="mb-3">
-            <label for="athlete_ids" class="form-label">Select Athlete from Dropdown</label>
-            <select id="athlete_ids" class="form-control" name="athlete_ids" required>
-                <!-- Loop through athletes and display options for selection -->
-                {% for athlete in athletes %}
-                    <option value="{{ athlete.id }}">{{ athlete.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Clear Selections button -->
-        <div class="text-center mb-3">
-            <button type="button" class="btn btn-secondary w-50" id="clearSelectionsBtn">Clear Selections</button>
+            <input class="form-control" name="graduation_year" placeholder="Graduation Year" type="number" min="2025" max="2028" value="{{ athlete.graduation_year }}">
         </div>
 
         <!-- Submit button to update the account -->
@@ -67,19 +52,5 @@
     </form>
 </div>
 
-<!-- JavaScript for handling the "Clear Selections" button -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const selectElement = document.getElementById('athlete_ids');
-        const resetButton = document.getElementById('clearSelectionsBtn');
-
-        // Event listener to deselect all options when the button is clicked
-        resetButton.addEventListener('click', function () {
-            for (let option of selectElement.options) {
-                option.selected = false;
-            }
-        });
-    });
-</script>
 
 {% endblock %}

@@ -142,7 +142,7 @@ def update_athlete_account():
     if request.method == "POST":
         db = get_db()
         # Retrieve the form data submitted by the user
-        athlete_id = request.form.getlist("athlete_ids")  # List of selected athlete IDs
+        athlete_id = request.form.getlist("athlete_id")
         username = request.form.get("username")  # New username input
         password = request.form.get("password")  # New password input (correct field name)
         confirmation = request.form.get("confirmation")  # Password confirmation input
@@ -167,27 +167,20 @@ def update_athlete_account():
         # Retrieve the current user's ID from the session
         current_user = session["user_id"]
 
-        # If an athlete is selected, handle updating their info
-        if athlete_id:
-            # Make sure we only have one athlete selected (otherwise return an error)
-            if len(athlete_id) != 1:
-                return apology("Please select only one athlete to update", 400)
-            athlete_id = athlete_id[0]  # Extract the single athlete ID
-            current_user = athlete_id  # Update the current user to the selected athlete
-            try:
-                # Perform the update for the username, password, planned hours, and graduation year
-                db.execute("""
-                    UPDATE users
-                    SET username = ?,
-                        password_hash = ?,
-                        planned_hours = ?,
-                        graduation_year = ?
-                    WHERE id = ?
-                """, (username, password_hash, planned_hours, graduation_year, current_user,))
-                db.commit()
-            except Exception as e:
-                # Catch any database errors (e.g., if the username already exists) and show an error message
-                return apology(f"Error: {e}", 400)
+        try:
+            # Perform the update for the username, password, planned hours, and graduation year
+            db.execute("""
+                UPDATE users
+                SET username = ?,
+                    password_hash = ?,
+                    planned_hours = ?,
+                    graduation_year = ?
+                WHERE id = ?
+            """, (username, password_hash, planned_hours, graduation_year, athlete_id,))
+            db.commit()
+        except Exception as e:
+            # Catch any database errors (e.g., if the username already exists) and show an error message
+            return apology(f"Error: {e}", 400)
 
         # Redirect to the homepage after the update is successful
         return redirect("/")
@@ -195,10 +188,13 @@ def update_athlete_account():
 
     else:
         db = get_db()
+        athlete_id = request.args.get("id")
+        if not athlete_id:
+            return "Error: athlete id is missing", 400
         # If the request method is GET, render the update account page
         # Retrieve all athletes that the current user (coach) can manage
-        athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", (0,)).fetchall()
-        return render_template("update_athlete_account.html", athletes=athletes)
+        athlete = db.execute("SELECT * FROM users WHERE id = ?", (athlete_id,)).fetchone()
+        return render_template("update_athlete_account.html", athlete=athlete)
 
 
 
