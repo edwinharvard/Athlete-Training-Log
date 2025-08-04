@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Update Coach Account
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <!-- Button to go back to the homepage -->
+    <div class="text-center mb-4">
+        <a href="/" class="btn btn-secondary">Back to Homepage</a>
+    </div>
+
+    <h1 class="text-center mb-4">Update Your Account</h1>
+
+    <!-- Form for updating the coach's own account details -->
+    <form action="/update-coach-account" method="post" class="mx-auto" style="max-width: 400px;">
+        <!-- Username -->
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input autocomplete="off" autofocus 
+                   class="form-control" 
+                   name="username" 
+                   placeholder="Username" 
+                   value="{{ user.username }}" 
+                   type="text" 
+                   required>
+        </div>
+
+        <!-- New password -->
+        <div class="mb-3">
+            <label for="password" class="form-label">New Password</label>
+            <input class="form-control" 
+                   name="password" 
+                   placeholder="Leave blank to keep current password" 
+                   type="password">
+        </div>
+
+        <!-- Confirm new password -->
+        <div class="mb-3">
+            <label for="confirmation" class="form-label">Confirm New Password</label>
+            <input class="form-control" 
+                   name="confirmation" 
+                   placeholder="Confirm Password" 
+                   type="password">
+        </div>
+
+        <!-- Submit button -->
+        <button class="btn btn-primary w-100" type="submit">Update Account</button>
+    </form>
+</div>
+{% endblock %}

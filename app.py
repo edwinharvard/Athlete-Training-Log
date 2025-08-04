@@ -197,6 +197,46 @@ def update_athlete_account():
         return render_template("update_athlete_account.html", athlete=athlete)
 
 
+@app.route("/update-coach-account", methods=["GET", "POST"])
+@login_required  # or @coach_account_required if you want to double-check
+def update_coach_account():
+    db = get_db()
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        if not username:
+            return apology("must provide username", 400)
+
+        # if password fields provided, ensure they match
+        if password or confirmation:
+            if password != confirmation:
+                return apology("passwords must match", 400)
+            pw_hash = generate_password_hash(password)
+        else:
+            pw_hash = None
+
+        # build your UPDATE statement dynamically
+        if pw_hash:
+            db.execute(
+                "UPDATE users SET username = ?, password_hash = ? WHERE id = ?",
+                (username, pw_hash, session["user_id"])
+            )
+        else:
+            db.execute(
+                "UPDATE users SET username = ? WHERE id = ?",
+                (username, session["user_id"])
+            )
+        db.commit()
+        return redirect("/")
+
+    else:
+        user = db.execute("SELECT username FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+        return render_template("update_coach_account.html", user=user)
+
+
 
 
 @app.route("/add-workout", methods=["GET", "POST"])
