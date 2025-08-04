@@ -220,22 +220,41 @@ def init_db():
     # Drop existing tables if they exist
     db.execute('DROP TABLE IF EXISTS refresh_tokens')
     db.execute('DROP TABLE IF EXISTS short_lived_access_tokens')
+    db.execute('DROP TABLE IF EXISTS workout')
     
-    # Create tables for Strava OAuth tokens
+    # Create workout table with strava_id and REAL numbers
     db.execute('''
-    CREATE TABLE IF NOT EXISTS refresh_tokens (
-        athlete_id INTEGER PRIMARY KEY,
-        refresh_token_code TEXT NOT NULL,
-        scope TEXT NOT NULL
-    )
+      CREATE TABLE IF NOT EXISTS workout (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id          INTEGER NOT NULL,
+        completed_hours  REAL    NOT NULL,
+        workout_type     TEXT    NOT NULL,
+        date             TEXT    NOT NULL,
+        distance         REAL,
+        comments         TEXT,
+        planned_hours    REAL,
+        title            TEXT,
+        strava_id        TEXT,
+        UNIQUE(user_id, strava_id)
+      )
+    ''')
+    
+    # Create Strava token tables
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+            athlete_id INTEGER PRIMARY KEY,
+            refresh_token_code TEXT NOT NULL,
+            scope TEXT NOT NULL
+        )
     ''')
     
     db.execute('''
-    CREATE TABLE IF NOT EXISTS short_lived_access_tokens (
-        athlete_id INTEGER PRIMARY KEY,
-        access_token TEXT NOT NULL,
-        expires_at INTEGER NOT NULL
-    )
+        CREATE TABLE IF NOT EXISTS short_lived_access_tokens (
+            athlete_id INTEGER PRIMARY KEY,
+            access_token TEXT NOT NULL,
+            expires_at INTEGER NOT NULL
+        )
     ''')
     
     db.commit()
+

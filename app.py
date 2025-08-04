@@ -356,7 +356,6 @@ def update_coach_account():
 @login_required
 def add_workout():
     """Create a new workout entry"""
-
     if request.method == "POST":
         db = get_db()
         completed_hours = request.form.get("completed_hours")
@@ -366,23 +365,24 @@ def add_workout():
         comments = request.form.get("comments")
         date = request.form.get("date")
         title = request.form.get("title")
+        strava_id = request.form.get("strava_id")  # Add this line
 
         # Validate hours
         try:
-            if not completed_hours or int(completed_hours) <= 0:
+            if not completed_hours or float(completed_hours) <= 0:  # Changed to float
                 return apology("Completed hours must be greater than zero", 400)
 
             if planned_hours:
-                if int(planned_hours) < 0:
+                if float(planned_hours) < 0:  # Changed to float
                     return apology("Planned hours must be a positive number", 400)
             else:
                 planned_hours = 0
 
-            completed_hours = int(completed_hours)
-            planned_hours = int(planned_hours)
+            completed_hours = float(completed_hours)  # Changed to float
+            planned_hours = float(planned_hours)     # Changed to float
 
         except ValueError:
-            return apology("Both completed and planned hours must be valid numbers", 400)
+            return apology("Hours must be valid numbers", 400)
 
         # Validate required fields
         if not workout_type:
@@ -393,8 +393,15 @@ def add_workout():
         current_user = session["user_id"]
 
         # Insert the workout into the database
-        db.execute("INSERT INTO workout (user_id, completed_hours, workout_type, date, distance, comments, planned_hours, title) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                   (current_user, completed_hours, workout_type, date, distance, comments, planned_hours, title,))
+        db.execute("""
+            INSERT INTO workout (
+                user_id, completed_hours, workout_type, date, 
+                distance, comments, planned_hours, title, strava_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            current_user, completed_hours, workout_type, date,
+            distance, comments, planned_hours, title, strava_id
+        ))
         db.commit()
         return redirect("/")
 
@@ -880,20 +887,23 @@ def fetch_activities():
             # Convert elapsed time from seconds to hours
             hours = float(act["elapsed_time"]) / 3600
             
-            # Insert activity into database
+            # Insert activity into database with strava_id for uniqueness
             db.execute("""
                 INSERT OR IGNORE INTO workout 
-                (user_id, completed_hours, workout_type, date, distance, title)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (user_id, completed_hours, workout_type, date, distance, title, strava_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 athlete_id,
                 hours,
                 act["type"],
                 act["start_date_local"][:10],  # Just the date part
                 float(act.get("distance", 0)) / 1000,  # Convert meters to kilometers
-                act["name"]
+                act["name"],
+                str(act["id"])  # Add Strava's activity ID for uniqueness
             ))
-            stored_count += 1
+            
+            if db.total_changes > 0:  # Only increment if a new row was inserted
+                stored_count += 1
             
         except Exception as e:
             app.logger.error(f"Error processing activity: {e}")
@@ -902,8 +912,10 @@ def fetch_activities():
     db.commit()
     
     if stored_count > 0:
-        flash(f"Successfully imported {stored_count} activities from Strava!", "success")
-    
+        flash(f"Successfully imported {stored_count} new activities from Strava!", "success")
+    else:
+        flash("No new activities to import", "info")
+
     return render_template(
         "fetch_strava_activities.html", 
         activities=activities,
