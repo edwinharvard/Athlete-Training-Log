@@ -269,15 +269,21 @@ def add_workout_coach():
         comments = request.form.get("comments") or 'N/A'
         date = request.form.get("date")
         title = request.form.get("title") or 'N/A'
-        athlete_ids = request.form.getlist("athlete_ids")
 
-        # Validate that hours are provided and are positive numbers
+        athlete_ids = request.form.getlist("athlete_ids[]")
+        # Convert to ints if you need:
+        athlete_ids = [int(a) for a in athlete_ids]
+
+        # Validate hours
         try:
             if not completed_hours or int(completed_hours) <= 0:
-                return apology("Completed hours must be a positive number", 400)
+                return apology("Completed hours must be greater than zero", 400)
 
-            if not planned_hours or int(planned_hours) <= 0:
-                return apology("Planned hours must be a positive number", 400)
+            if planned_hours:
+                if int(planned_hours) < 0:
+                    return apology("Planned hours must be a positive number", 400)
+            else:
+                planned_hours = 0
 
             completed_hours = int(completed_hours)
             planned_hours = int(planned_hours)
@@ -294,14 +300,14 @@ def add_workout_coach():
 
         for athlete_id in athlete_ids:
             db.execute("INSERT INTO workout (user_id, completed_hours, workout_type, distance, comments, date, planned_hours, title) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                       int(athlete_id), completed_hours, workout_type, distance, comments, date, planned_hours, title)
-
+                       (int(athlete_id), completed_hours, workout_type, distance, comments, date, planned_hours, title,))
+            db.commit()
         return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         db = get_db()
-        athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", 0)
+        athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", (0,)).fetchall()
         return render_template("add_workout_coach.html", athletes=athletes)
 
 
@@ -326,13 +332,16 @@ def update_workout():
         if not workout_id:
             return apology("must provide a workout id", 400)
 
-        # Validate that hours are provided and are positive numbers
+        # Validate hours
         try:
             if not completed_hours or int(completed_hours) <= 0:
-                return apology("Completed hours must be a positive number", 400)
+                return apology("Completed hours must be greater than zero", 400)
 
-            if not planned_hours or int(planned_hours) <= 0:
-                return apology("Planned hours must be a positive number", 400)
+            if planned_hours:
+                if int(planned_hours) < 0:
+                    return apology("Planned hours must be a positive number", 400)
+            else:
+                planned_hours = 0
 
             completed_hours = int(completed_hours)
             planned_hours = int(planned_hours)
@@ -349,20 +358,23 @@ def update_workout():
             return apology("must provide the date", 400)
 
         # Perform the update query in the database
-        db.execute("UPDATE workout SET completed_hours = ?, planned_hours = ?, workout_type = ?, distance = ?, comments = ?, date = ?, title = ? WHERE id = ?",
-                   completed_hours, planned_hours, workout_type, distance, comments, date, title, workout_id)
+        db.execute("UPDATE workout SET completed_hours = ?, planned_hours = ?, workout_type = ?, distance = ?, comments = ?, date = ?, title = ? WHERE id = ?", (
+                   completed_hours, planned_hours, workout_type, distance, comments, date, title, workout_id,))
         db.commit()
         # Redirect to the homepage after successful update
         return redirect("/")
 
     else:
+        db = get_db()
         # If the method is GET, retrieve workout ID from query parameters
         workout_id = request.args.get("id")  # Get workout_id from query params
         if not workout_id:
             return "Error: Workout ID is missing!", 400
 
+        workout = db.execute(
+                "SELECT * FROM workout WHERE id = ?", (workout_id,)).fetchone()
         # Render the update workout form, passing workout_id for context
-        return render_template("update_workout.html", workout_id=workout_id)
+        return render_template("update_workout.html", workout=workout)
 
 
 
@@ -380,15 +392,20 @@ def update_workout_coach():
         comments = request.form.get("comments")
         date = request.form.get("date")
         title = request.form.get("title")
-        athlete_ids = request.form.getlist("athlete_ids")
+        athlete_ids = request.form.getlist("athlete_ids[]")
+        # Convert to ints if you need:
+        athlete_ids = [int(a) for a in athlete_ids]
 
-        # Validate that hours are provided and are positive numbers
+        # Validate hours
         try:
             if not completed_hours or int(completed_hours) <= 0:
-                return apology("Completed hours must be a positive number", 400)
+                return apology("Completed hours must be greater than zero", 400)
 
-            if not planned_hours or int(planned_hours) <= 0:
-                return apology("Planned hours must be a positive number", 400)
+            if planned_hours:
+                if int(planned_hours) < 0:
+                    return apology("Planned hours must be a positive number", 400)
+            else:
+                planned_hours = 0
 
             completed_hours = int(completed_hours)
             planned_hours = int(planned_hours)
@@ -406,17 +423,22 @@ def update_workout_coach():
         # Perform the update
         for athlete in athlete_ids:
             db.execute("UPDATE workout SET completed_hours = ?, planned_hours = ?, workout_type = ?, distance = ?, comments = ?, date = ?, title = ? WHERE id = ? AND athlete_id = ?",
-                       completed_hours, planned_hours, workout_type, distance, comments, date, title, workout_id, athlete)
+                       (completed_hours, planned_hours, workout_type, distance, comments, date, title, workout_id, athlete,))
             db.commit()
         return redirect("/")
 
     else:
+        db = get_db()
+        # If the method is GET, retrieve workout ID from query parameters
         workout_id = request.args.get("id")  # Get workout_id from query params
         if not workout_id:
-            return apology("Error: Workout ID is missing!", 400)
+            return "Error: Workout ID is missing!", 400
 
-        return render_template("update_workout_coach.html", workout_id=workout_id)
-
+        workout = db.execute(
+                "SELECT * FROM workout WHERE id = ?", (workout_id,)).fetchone()
+        # Render the update workout form, passing workout_id for context
+        return render_template("update_workout_coach.html", workout=workout)
+    
 
 @app.route("/athlete")
 @login_required  # Ensure the user is logged in
@@ -458,7 +480,7 @@ def view_athletes():
         db = get_db()
         # Query all athletes (users who are not coaches) ordered by graduation year
         athletes = db.execute(
-            "SELECT * FROM users WHERE coach = ? ORDER BY graduation_year DESC", 0)
+            "SELECT * FROM users WHERE coach = ? ORDER BY graduation_year DESC", (0,))
 
         # Render the athletes list in the template
         return render_template("view_athletes.html", athletes=athletes)

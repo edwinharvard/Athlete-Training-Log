@@ -13,35 +13,35 @@
     <form action="/update-workout" method="post" class="mx-auto" style="max-width: 600px;">
 
         <!-- Hidden input for workout ID, passed in from route -->
-        <input type="hidden" name="workout_id" id="workout_id" value="{{ workout_id }}">
+        <input type="hidden" name="workout_id" id="workout_id" value="{{ workout.id }}">
 
         <div class="mb-3">
             <label for="completed_hours" class="form-label">Completed Hours</label>
-            <input type="number" name="completed_hours" id="completed_hours" class="form-control" placeholder="Completed Hours" min="0" required>
+            <input type="number" name="completed_hours" id="completed_hours" class="form-control" value="{{ workout.completed_hours }}" min="0" required>
         </div>
         <div class="mb-3">
             <label for="planned_hours" class="form-label">Planned Hours</label>
-            <input type="number" name="planned_hours" id="planned_hours" class="form-control" placeholder="Planned Hours" min="0" required>
+            <input type="number" name="planned_hours" id="planned_hours" class="form-control" value="{{ workout.planned_hours }}" min="0" required>
         </div>
         <div class="mb-3">
             <label for="workout_type" class="form-label">Workout Type</label>
-            <input type="text" name="workout_type" id="workout_type" class="form-control" placeholder="Workout Type" required>
+            <input type="text" name="workout_type" id="workout_type" class="form-control" value="{{ workout.workout_type}}" required>
         </div>
         <div class="mb-3">
             <label for="distance" class="form-label">Distance (if applicable)</label>
-            <input type="number" name="distance" id="distance" class="form-control" placeholder="Distance" min="0">
+            <input type="number" name="distance" id="distance" class="form-control" placeholder="Distance" value="{{ workout.distance}}" min="0">
         </div>
         <div class="mb-3">
             <label for="comments" class="form-label">Comments (if applicable)</label>
-            <textarea name="comments" id="comments" class="form-control" rows="3" placeholder="Comments"></textarea>
+            <textarea name="comments" id="comments" class="form-control" rows="3" placeholder="Comments" value="{{ workout.comments}}"></textarea>
         </div>
         <div class="mb-3">
             <label for="date" class="form-label">Date</label>
-            <input type="date" name="date" id="date" class="form-control" required>
+            <input type="date" name="date" id="date" class="form-control" required value="{{workout.date}}">
         </div>
         <div class="mb-3">
             <label for="title" class="form-label">Workout Title (if applicable)</label>
-            <input type="text" name="title" id="title" class="form-control" placeholder="Title">
+            <input type="text" name="title" id="title" class="form-control" placeholder="Title" value="{{workout.title}}">
         </div>
 
         <button type="submit" class="btn btn-primary w-100">Update Workout</button>

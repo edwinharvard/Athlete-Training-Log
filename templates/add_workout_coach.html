@@ -61,12 +61,11 @@
         <!-- Dropdown to select athletes (coaches can select multiple athletes) -->
         <div class="mb-3">
             <label for="athlete_ids" class="form-label">Select Athlete(s)</label>
-            <select name="athlete_ids" id="athlete_ids" class="form-control" multiple>
-                <!-- Loop through all athletes and display them as options in the dropdown -->
+            <select name="athlete_ids[]" id="athlete_ids" class="form-control" multiple>
                 {% for athlete in athletes %}
-                <option value="{{ athlete.id }}">{{ athlete.username }}</option>
+                  <option value="{{ athlete.id }}">{{ athlete.username }}</option>
                 {% endfor %}
-            </select>
+              </select>
         </div>
 
         <!-- Submit button to create the workout -->
