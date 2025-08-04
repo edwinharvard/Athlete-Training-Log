@@ -517,8 +517,8 @@ def delete_workout():
             return apology("must provide the workout id", 400)
 
         # Delete the workout from the database if it belongs to the current user
-        db.execute("DELETE FROM workout WHERE id = ? AND user_id = ?", workout_id, current_user)
-
+        db.execute("DELETE FROM workout WHERE id = ? AND user_id = ?", (workout_id, current_user,))
+        db.commit()
         return redirect("/")  # Redirect to the home page after deletion
 
     else:
