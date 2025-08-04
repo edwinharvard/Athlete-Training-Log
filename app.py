@@ -449,25 +449,42 @@ def index_athlete():
         db = get_db()
         current_user = session["user_id"]
 
-        # Check if the current user is a coach
-        coach_status = db.execute("SELECT coach FROM users WHERE id = ?", (current_user,)).fetchone()
+        # 1) fetch coach flag
+        row = db.execute(
+            "SELECT coach FROM users WHERE id = ?",
+            (current_user,)
+        ).fetchone()
+        coach_flag = row["coach"] if row else 0
 
-        # If not a coach, show the logged-in athlete's workouts
-        if coach_status != 1:
-            workouts = db.execute(
-                "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC", (current_user,))
-            user = db.execute("SELECT username FROM users WHERE id = ?", (current_user,))
-        else:
-            # If a coach, get the athlete's ID from query params
+        # 2) decide whose log to show
+        if coach_flag == 1:
+            # coach: expect ?id=ATHLETE_ID
             athlete_id = request.args.get("id")
             if not athlete_id:
-                return apology("Error: Athlete ID is missing!", 400)
-            workouts = db.execute(
-                "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC", (athlete_id,))
-            user = db.execute("SELECT username FROM users WHERE id = ?", (athlete_id,)).fetchone()
+                return apology("must provide athlete id", 400)
+            athlete_id = int(athlete_id)
+        else:
+            # non‐coach: only their own workouts
+            athlete_id = current_user
 
-        # Render workouts for the athlete (or selected athlete)
-        return render_template("athlete.html", workouts=workouts, user=user, current_user=current_user)
+        # 3) load workouts & user info
+        workouts = db.execute(
+            "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC",
+            (athlete_id,)
+        ).fetchall()
+        user = db.execute(
+            "SELECT username FROM users WHERE id = ?",
+            (athlete_id,)
+        ).fetchone()
+
+        # 4) render template
+        return render_template(
+            "athlete.html",
+            workouts=workouts,
+            user=user,               # a Row with .username
+            current_user=current_user  # if you need it in the template
+        )
+
 
 
 
