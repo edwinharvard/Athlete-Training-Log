@@ -647,21 +647,73 @@ def coach_home():
     return render_template("coach_home.html", user=user, coach=True)
 
 
+from datetime import date, timedelta
+
 @app.route("/athlete-home")
 @login_required
 def athlete_home():
-    """Render the athlete’s dashboard page."""
+    """Render the athlete’s dashboard page with a 7-day calendar and pie‐chart data."""
     db = get_db()
-    user = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
-    workout = db.execute(
+    uid = session["user_id"]
+
+    # 1) Build the 7-day window
+    today = date.today()
+    week_dates = [today - timedelta(days=i) for i in reversed(range(7))]
+
+    start, end = week_dates[0].isoformat(), week_dates[-1].isoformat()
+
+    # 2) Fetch and dedupe your workouts in that window
+    rows = db.execute(
+        "SELECT * FROM workout WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date",
+        (uid, start, end)
+    ).fetchall()
+    seen_ids = set()
+    unique = []
+    for w in rows:
+        if w["id"] not in seen_ids:
+            seen_ids.add(w["id"])
+            unique.append(w)
+
+    # 3) Group by date
+    workouts_by_date = {d: [] for d in week_dates}
+    for w in unique:
+        d = w["date"] if isinstance(w["date"], date) else date.fromisoformat(w["date"])
+        if d in workouts_by_date:
+            workouts_by_date[d].append(w)
+
+    # 4) Compute total hours
+    total = db.execute(
         "SELECT SUM(completed_hours) AS total_hours FROM workout WHERE user_id = ?",
-        (session["user_id"],)
-    ).fetchone()
+        (uid,)
+    ).fetchone()["total_hours"] or 0
+
+    # 5) Aggregate by workout_type for the pie chart
+    # Option A: do it in SQL
+    agg = db.execute(
+        """
+        SELECT workout_type AS type,
+               SUM(completed_hours) AS hours
+        FROM workout
+        WHERE user_id = ? AND date BETWEEN ? AND ?
+        GROUP BY workout_type
+        """,
+        (uid, start, end)
+    ).fetchall()
+    types = [row["type"] for row in agg]
+    hours_by_type = [row["hours"] for row in agg]
+
+    # Finally render, passing the two new lists into `workout`
     return render_template(
         "athlete_home.html",
-        user=user,
+        user=db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone(),
         coach=False,
-        workout=workout
+        workout={
+            "total_hours": total,
+            "types": types,
+            "hours_by_type": hours_by_type
+        },
+        week_dates=week_dates,
+        workouts_by_date=workouts_by_date
     )
 
 

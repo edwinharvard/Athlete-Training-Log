@@ -1,18 +1,20 @@
 {% extends "layout.html" %}
 
-{% block title %}Athlete Dashboard{% endblock %}
+{% block title %}Your Training Calendar{% endblock %}
 
 {% block main %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
   <h1 class="text-center mb-2">Welcome, {{ user.username|capitalize }}</h1>
 
+  <!-- Athlete Summary -->
   <div class="text-center mb-4">
     <span class="me-3"><strong>Graduation Year:</strong> {{ user.graduation_year }}</span>
     <span><strong>Planned Hours:</strong> {{ user.planned_hours }}</span>
   </div>
 
+  <!-- Action Cards -->
   <div class="row gy-4">
-    <div class="col-12 col-md-6 col-lg-6">
+    <div class="col-12 col-md-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">Add Workout</h5>
@@ -21,8 +23,7 @@
         </div>
       </div>
     </div>
-
-    <div class="col-12 col-md-6 col-lg-6">
+    <div class="col-12 col-md-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">View Training Log</h5>
@@ -33,13 +34,76 @@
     </div>
   </div>
 
+  <!-- Aggregate Data with Pie Chart -->
   <div class="mt-5">
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Aggregate Training Data</h5>
-        <p class="card-text"><!-- TODO: Add aggregated charts or summaries here --></p>
+        <p class="card-text">Total hours: {{ workout.total_hours }}</p>
+        <div class="chart-container" style="position: relative; height:40vh; width:60vw;">
+          <canvas id="workoutPieChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- 7-Day Calendar -->
+  <h3 class="mt-5 mb-3">Last 7 Days of Training</h3>
+  <div class="table-responsive">
+    <table class="table table-bordered text-center w-100">
+      <thead class="table-light">
+        <tr>
+          {% for d in week_dates %}
+            <th style="min-width: 14%;">{{ d.strftime("%a<br>%b %d")|safe }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for d in week_dates %}
+            <td style="vertical-align: top; padding: 1rem;">
+              {% if workouts_by_date[d] %}
+                <ul class="list-unstyled mb-0">
+                  {% for w in workouts_by_date[d] %}
+                    <li><strong>{{ w.completed_hours }}h</strong> – {{ w.title or w.workout_type }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <em class="text-muted">—</em>
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Data passed from Flask: workout.types and workout.hours_by_type should be lists
+  const labels = {{ workout.types | tojson }};
+  const dataValues = {{ workout.hours_by_type | tojson }};
+
+  const ctx = document.getElementById('workoutPieChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: dataValues,
+        backgroundColor: labels.map((_, i) => `hsl(${i * (360 / labels.length)}, 70%, 50%)`)
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+</script>
 {% endblock %}
