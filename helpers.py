@@ -78,157 +78,93 @@ def login_required(f):
 
 # Decorator to require coach account for certain routes
 def coach_account_required(f):
-    """
-    Decorate routes to require coach account.
-    This ensures only users with a coach account can access certain pages.
-    """  # Database connection
-
     @wraps(f)
-    @login_required  # First check if the user is logged in
-    def decorated_function(*args, **kwargs):
-        # Query the database to check if the logged-in user is a coach
-        sqliteConnection = sqlite3.connect('training_log.db')
-        cursor = sqliteConnection.cursor()
-        coach_status = cursor.execute("SELECT coach FROM users WHERE id = ?", session.get("user_id"))
-        cursor.close()
-        if coach_status[0]['coach'] != 1:  # If the user is not a coach (coach value should be 1)
-            return apology("must have a coach's account", 401)  # Show an apology with an error message
+    @login_required
+    def wrapped(*args, **kwargs):
+        db  = get_db()
+        row = db.execute(
+            "SELECT coach FROM users WHERE id = ?",
+            (session['user_id'],)
+        ).fetchone()
+        if not row or row['coach'] != 1:
+            return apology("must have a coach's account", 401)
         return f(*args, **kwargs)
-
-    return decorated_function
+    return wrapped
 
 def refresh_access_token(athlete_id):
-    """
-    Refresh a short-lived access token for the specified athlete.
+    db = get_db()
 
-    Parameters:
-        client_id (str): Your Strava API client ID.
-        client_secret (str): Your Strava API client secret.
-        athlete_id (int): The athlete's ID in the database.
+    # grab the refresh token
+    row = db.execute(
+        "SELECT refresh_token_code FROM refresh_tokens WHERE athlete_id = ?",
+        (athlete_id,)
+    ).fetchone()
+    if not row:
+        return {"error": "Athlete not found in refresh_tokens"}
 
-    Returns:
-        dict: A dictionary containing the new access token and expiration time, or an error message.
-    """
-    try:
-        sqliteConnection = sqlite3.connect('training_log.db')
-        cursor = sqliteConnection.cursor()
+    refresh_token = row["refresh_token_code"]
 
-        # Retrieve the refresh token for the given athlete
-        cursor.execute("""
-            SELECT refresh_token_code FROM refresh_tokens WHERE athlete_id = ?
-        """, (athlete_id,))
-        row = cursor.fetchone()
-
-        if not row:
-            return {"error": "Athlete not found in refresh_tokens table"}
-        
-        refresh_token_code = row[0]
-
-        # Use the refresh token to request a new access token from Strava
-        url = "https://www.strava.com/api/v3/oauth/token"
-        data = {
-            "client_id": CLIENT_ID,
+    # hit Strava
+    resp = requests.post(
+        "https://www.strava.com/api/v3/oauth/token",
+        data={
+            "client_id":     CLIENT_ID,
             "client_secret": CLIENT_SECRET,
-            "grant_type": "refresh_token",
-            "refresh_token": refresh_token_code
+            "grant_type":    "refresh_token",
+            "refresh_token": refresh_token
         }
+    )
+    resp.raise_for_status()
+    token_data = resp.json()
 
-        response = requests.post(url, data=data)
-        response.raise_for_status()
-        token_data = response.json()
+    new_token = token_data["access_token"]
+    expires   = token_data["expires_at"]
 
-        # Extract the new access token and expiration time
-        new_access_token = token_data.get("access_token")
-        expires_at = token_data.get("expires_at")
+    # update our table using the same connection
+    db.execute("""
+        INSERT OR REPLACE INTO short_lived_access_tokens
+            (athlete_id, scope, short_lived_access_token_code, expires_at)
+        VALUES (?, ?, ?, ?)
+    """, (athlete_id, True, new_token, expires))
+    db.commit()
 
-        # Update the short-lived access tokens table
-        cursor.execute("""
-            INSERT OR REPLACE INTO short_lived_access_tokens (athlete_id, scope, short_lived_access_token_code, expires_at)
-            VALUES (?, ?, ?, ?)
-        """, (athlete_id, True, new_access_token, expires_at))
-        sqliteConnection.commit()
-        cursor.close()
-        sqliteConnection.close()
-
-        return {
-            "access_token": new_access_token,
-            "expires_at": expires_at
-        }
-
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
-    except sqlite3.Error as db_error:
-        return {"error": f"Database error: {db_error}"}
-
+    return {"access_token": new_token, "expires_at": expires}
 
 
 def get_valid_access_token(athlete_id):
+    db = get_db()
+
+    row = db.execute("""
+        SELECT short_lived_access_token_code, expires_at
+          FROM short_lived_access_tokens
+         WHERE athlete_id = ?
+    """, (athlete_id,)).fetchone()
+
+    if not row:
+        return {"error": "No token on file"}
+
+    access_token, expires_at = row
+    now_ts = int(datetime.datetime.now().timestamp())
+
+    if now_ts >= expires_at:
+        # refresh and return
+        data = refresh_access_token(athlete_id)
+        if "error" in data:
+            return data
+        return data["access_token"]
+
+    return access_token
+
+
+def strava_api_request(athlete_id, endpoint="athlete"):
     """
-    Retrieve a valid short-lived access token, refreshing it if expired.
-
-    Parameters:
-        client_id (str): Strava API client ID.
-        client_secret (str): Strava API client secret.
-        athlete_id (int): Athlete ID in the database.
-
-    Returns:
-        str: A valid access token or an error message.
+    endpoint should be something like 'athlete', 'activities', etc.
     """
-    try:
-        sqliteConnection = sqlite3.connect('training_log.db')
-        cursor = sqliteConnection.cursor()
+    token = get_valid_access_token(athlete_id)
+    if isinstance(token, dict) and token.get("error"):
+        return token
 
-        # Get the current access token and expiration time
-        cursor.execute("""
-            SELECT short_lived_access_token_code, expires_at
-            FROM short_lived_access_tokens
-            WHERE athlete_id = ?
-        """, (athlete_id,))
-        row = cursor.fetchone()
-
-        if not row:
-            return {"error": "Athlete not found in short_lived_access_tokens table"}
-
-        access_token, expires_at = row
-        current_time = int(datetime.now().timestamp())
-
-        # Check if the token is expired
-        if current_time >= expires_at:
-            # Refresh the token
-            refreshed_token_data = refresh_access_token(client_id, client_secret, athlete_id)
-            if "error" in refreshed_token_data:
-                return {"error": refreshed_token_data["error"]}
-            return refreshed_token_data["access_token"]
-
-        return access_token
-
-    except sqlite3.Error as db_error:
-        return {"error": f"Database error: {db_error}"}
-
-
-def strava_api_request(athlete_id):
-    """
-    Make a Strava API request using a valid access token.
-
-    Parameters:
-        endpoint (str): The API endpoint to query.
-        client_id (str): Strava API client ID.
-        client_secret (str): Strava API client secret.
-        athlete_id (int): Athlete ID in the database.
-
-    Returns:
-        dict: The API response or an error message.
-    """
-    access_token = get_valid_access_token(athlete_id)
-    if "error" in access_token:
-        return {"error": access_token["error"]}
-
-    url = f"https://www.strava.com/api/v3/oath/token"
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+    url = f"https://www.strava.com/api/v3/{endpoint}"
+    resp = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+    resp.raise_for_status()
+    return resp.json()

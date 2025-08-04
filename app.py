@@ -51,7 +51,7 @@ def register():
             return apology("passwords must match", 400)
 
         # Hash the provided password for security
-        password_hash = generate_password_hash(password)
+        password_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
         # Handle coach field: convert to 1 if 'coach' is selected, otherwise 0
         if coach == "coach":
@@ -66,16 +66,18 @@ def register():
         # Try to insert the new user into the database
         try:
             db.execute("INSERT INTO users (username, password_hash, planned_hours, graduation_year, coach) VALUES (?, ?, ?, ?, ?)",
-                       username, password_hash, planned_hours, graduation_year, coach)
+                       (username, password_hash, planned_hours, graduation_year, coach))
+            db.commit()
         except:
             # Handle the case where the username already exists in the database
             return apology("username already exists", 400)
 
         # Retrieve the user details from the database to store in the session
-        rows = db.execute("SELECT * FROM users WHERE username = ?", username)
+        rows = db.execute("SELECT * FROM users WHERE username = ?", (username,))
 
+        user = rows.fetchone()
         # Set the user session with the user's ID
-        session["user_id"] = rows[0]["id"]
+        session["user_id"] = user["id"]
 
         # Redirect the user to the homepage after successful registration
         return redirect("/")
@@ -109,14 +111,13 @@ def login():
             "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
         )
 
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(
-            rows[0]["password_hash"], request.form.get("password")
+        user = rows.fetchone()
+        
+        if not user or not check_password_hash(
+            user['password_hash'], request.form['password']
         ):
             return apology("invalid username and/or password", 403)
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
+        session['user_id'] = user['id']
 
         # Redirect user to home page
         return redirect("/")
@@ -162,7 +163,10 @@ def update_account():
                 return apology("must provide matching password and confirmation", 400)
 
         # Hash the new password before storing it in the database
-        password_hash = hash(password) if password else None
+        if password:
+            password_hash = generate_password_hash(password, method="pbkdf2:sha256")
+        else:
+            password_hash = None
 
         # Retrieve the current user's ID from the session
         current_user = session["user_id"]
@@ -184,6 +188,7 @@ def update_account():
                         graduation_year = ?
                     WHERE id = ?
                 """, username, password_hash, planned_hours, graduation_year, current_user)
+                db.commit()
             except Exception as e:
                 # Catch any database errors (e.g., if the username already exists) and show an error message
                 return apology(f"Error: {e}", 400)
@@ -242,7 +247,7 @@ def add_workout():
         # Insert the workout into the database
         db.execute("INSERT INTO workout (user_id, completed_hours, workout_type, date, distance, comments, planned_hours, title) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                    current_user, completed_hours, workout_type, date, distance, comments, planned_hours, title)
-
+        db.commit()
         return redirect("/")
 
     # GET request: render form
@@ -347,7 +352,7 @@ def update_workout():
         # Perform the update query in the database
         db.execute("UPDATE workout SET completed_hours = ?, planned_hours = ?, workout_type = ?, distance = ?, comments = ?, date = ?, title = ? WHERE id = ?",
                    completed_hours, planned_hours, workout_type, distance, comments, date, title, workout_id)
-
+        db.commit()
         # Redirect to the homepage after successful update
         return redirect("/")
 
@@ -403,7 +408,7 @@ def update_workout_coach():
         for athlete in athlete_ids:
             db.execute("UPDATE workout SET completed_hours = ?, planned_hours = ?, workout_type = ?, distance = ?, comments = ?, date = ?, title = ? WHERE id = ? AND athlete_id = ?",
                        completed_hours, planned_hours, workout_type, distance, comments, date, title, workout_id, athlete)
-
+            db.commit()
         return redirect("/")
 
     else:
@@ -559,14 +564,13 @@ def index():
         coach = False  # Default to not being a coach
 
         # Fetch the user's details from the database
-        user = db.execute("SELECT * FROM users WHERE id = ?", current_user)
-
+        user = db.execute("SELECT * FROM users WHERE id = ?", (current_user,)).fetchone()
         # Check if the user is a coach
-        if user[0]["coach"] == 1:
+        if user["coach"] == 1:
             coach = True  # Set coach to True if the user is a coach
-            return render_template("index.html", user=user[0], coach=coach)
+            return render_template("index.html", user=user, coach=coach)
         else:
-            workout = db.execute("SELECT SUM(completed_hours) FROM workout WHERE user_id = ?", current_user)
+            workout = db.execute("SELECT SUM(completed_hours) FROM workout WHERE user_id = ?", (current_user,)).fetchone()
             # Render the homepage template, passing user data and coach status
-            return render_template("index.html", user=user[0], coach=coach, workout=workout[0])
+            return render_template("index.html", user=user, coach=coach, workout=workout)
 
