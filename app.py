@@ -2,7 +2,6 @@ import os
 import sqlite3
 
 from flask import Flask, flash, redirect, render_template, request, session
-from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, coach_account_required, refresh_access_token, close_db, get_db
@@ -12,9 +11,6 @@ app.secret_key = 'ryerson_project2'
 
 app.config["DATABASE"] = "training_log.db"
 app.teardown_appcontext(close_db)
-
-if __name__ == '__main__':
-    app.run(debug=True)
 
 
 @app.after_request
@@ -225,10 +221,13 @@ def add_workout():
         # Validate hours
         try:
             if not completed_hours or int(completed_hours) <= 0:
-                return apology("Completed hours must be a positive number", 400)
+                return apology("Completed hours must be greater than zero", 400)
 
-            if not planned_hours or int(planned_hours) <= 0:
-                return apology("Planned hours must be a positive number", 400)
+            if planned_hours:
+                if int(planned_hours) < 0:
+                    return apology("Planned hours must be a positive number", 400)
+            else:
+                planned_hours = 0
 
             completed_hours = int(completed_hours)
             planned_hours = int(planned_hours)
@@ -246,7 +245,7 @@ def add_workout():
 
         # Insert the workout into the database
         db.execute("INSERT INTO workout (user_id, completed_hours, workout_type, date, distance, comments, planned_hours, title) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                   current_user, completed_hours, workout_type, date, distance, comments, planned_hours, title)
+                   (current_user, completed_hours, workout_type, date, distance, comments, planned_hours, title,))
         db.commit()
         return redirect("/")
 
@@ -427,28 +426,26 @@ def index_athlete():
     if request.method == "GET":
         db = get_db()
         current_user = session["user_id"]
-        current_user = [session["user_id"]]  # Current logged-in user's ID
 
         # Check if the current user is a coach
-        coach_status = db.execute("SELECT coach FROM users WHERE id = ?", session.get("user_id"))
+        coach_status = db.execute("SELECT coach FROM users WHERE id = ?", (current_user,)).fetchone()
 
         # If not a coach, show the logged-in athlete's workouts
-        if coach_status[0]['coach'] != 1:
+        if coach_status != 1:
             workouts = db.execute(
-                "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC", current_user[0])
-            user = db.execute("SELECT username FROM users WHERE id = ?", current_user[0])
+                "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC", (current_user,))
+            user = db.execute("SELECT username FROM users WHERE id = ?", (current_user,))
         else:
             # If a coach, get the athlete's ID from query params
             athlete_id = request.args.get("id")
             if not athlete_id:
                 return apology("Error: Athlete ID is missing!", 400)
             workouts = db.execute(
-                "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC", athlete_id)
-            user = db.execute("SELECT username FROM users WHERE id = ?", athlete_id)
-            current_user = db.execute("SELECT coach FROM users WHERE id = ?", current_user[0])
+                "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC", (athlete_id,))
+            user = db.execute("SELECT username FROM users WHERE id = ?", (athlete_id,)).fetchone()
 
         # Render workouts for the athlete (or selected athlete)
-        return render_template("athlete.html", workouts=workouts, user=user[0], current_user=current_user[0])
+        return render_template("athlete.html", workouts=workouts, user=user, current_user=current_user)
 
 
 
@@ -574,3 +571,8 @@ def index():
             # Render the homepage template, passing user data and coach status
             return render_template("index.html", user=user, coach=coach, workout=workout)
 
+
+
+# *** finally, at the very bottom of the file: ***
+if __name__ == "__main__":
+    app.run(debug=True)
