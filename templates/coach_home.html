@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Coach Dashboard{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+  <h1 class="text-center mb-2">Welcome, {{ user.username|capitalize }}</h1>
+
+  <div class="row gy-4">
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Add Workout</h5>
+          <p class="card-text flex-grow-1">Plan workouts for one or more athletes.</p>
+          <a href="/add-workout-coach" class="btn btn-primary mt-auto">Add Workout</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">View Athletes</h5>
+          <p class="card-text flex-grow-1">See and manage all your athletes.</p>
+          <a href="/view-athletes" class="btn btn-secondary mt-auto">View Athletes</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Update Account</h5>
+          <p class="card-text flex-grow-1">Change your username or password.</p>
+          <a href="/update-coach-account" class="btn btn-warning mt-auto">Update Account</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title text-danger">Delete Account</h5>
+          <p class="card-text flex-grow-1">Remove an athlete or your coach account.</p>
+          <a href="/delete-account" class="btn btn-danger mt-auto">Delete Account</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

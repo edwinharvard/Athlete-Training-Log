@@ -626,25 +626,44 @@ def delete_account():
 
 
 @app.route("/")
-@login_required  # Ensure the user is logged in
+@login_required
 def index():
-    """Render homepage"""
+    """Redirect to coach or athlete home based on role."""
+    db = get_db()
+    user = db.execute("SELECT coach FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    if user["coach"] == 1:
+        return redirect("/coach-home")
+    else:
+        return redirect("/athlete-home")
 
-    if request.method == "GET":
-        db = get_db()
-        current_user = session["user_id"]  # Get the ID of the logged-in user
-        coach = False  # Default to not being a coach
 
-        # Fetch the user's details from the database
-        user = db.execute("SELECT * FROM users WHERE id = ?", (current_user,)).fetchone()
-        # Check if the user is a coach
-        if user["coach"] == 1:
-            coach = True  # Set coach to True if the user is a coach
-            return render_template("index.html", user=user, coach=coach)
-        else:
-            workout = db.execute("SELECT SUM(completed_hours) FROM workout WHERE user_id = ?", (current_user,)).fetchone()
-            # Render the homepage template, passing user data and coach status
-            return render_template("index.html", user=user, coach=coach, workout=workout)
+@app.route("/coach-home")
+@login_required
+@coach_account_required
+def coach_home():
+    """Render the coach’s dashboard page."""
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    return render_template("coach_home.html", user=user, coach=True)
+
+
+@app.route("/athlete-home")
+@login_required
+def athlete_home():
+    """Render the athlete’s dashboard page."""
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    workout = db.execute(
+        "SELECT SUM(completed_hours) AS total_hours FROM workout WHERE user_id = ?",
+        (session["user_id"],)
+    ).fetchone()
+    return render_template(
+        "athlete_home.html",
+        user=user,
+        coach=False,
+        workout=workout
+    )
+
 
 
 
