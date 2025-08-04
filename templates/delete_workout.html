@@ -1,23 +1,26 @@
 {% extends "layout.html" %}
 
-{% block title %}
-    Delete Workout
-{% endblock %}
+{% block title %}Delete Workout{% endblock %}
 
 {% block main %}
-    <div class="container mt-4">
-        <h1 class="text-center mb-4">Are you sure you want to delete this workout?</h1>
-
-        <form action="/delete-workout" method="post" class="d-flex justify-content-center">
-            <input type="hidden" name="workout_id" id="workout_id" value="{{ workout_id }}">
-
-            <!-- Delete confirmation button -->
-            <button type="submit" class="btn btn-danger btn-lg">Delete Workout</button>
-        </form>
-
-        <div class="text-center mt-4">
-            <a href="/" class="btn btn-secondary">Cancel</a>
+<div class="container-fluid mt-4 px-2">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+      <div class="card shadow-sm">
+        <!-- Crimson-red header -->
+        <div class="card-header" style="background-color: crimson; color: #fff;">
+          <h4 class="mb-0">Confirm Deletion</h4>
         </div>
+        <div class="card-body">
+          <p class="lead text-center">Are you sure you want to delete this workout?</p>
+          <form action="/delete-workout" method="post" class="d-flex justify-content-center">
+            <input type="hidden" name="workout_id" value="{{ workout_id }}">
+            <button type="submit" class="btn btn-danger btn-lg me-3">Delete Workout</button>
+            <a href="/" class="btn btn-outline-secondary btn-lg">Cancel</a>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
 {% endblock %}
-
