@@ -681,11 +681,33 @@ def athlete_home():
         if d in workouts_by_date:
             workouts_by_date[d].append(w)
 
-    # 4) Compute total hours
+
+    today = date.today()
+
+    # if we’re before May 1, then our current training year started last May 1…
+    if today < date(today.year, 5, 1):
+        start_year = date(today.year - 1, 5, 1)
+        end_year   = date(today.year,     4, 15)
+    else:
+        # otherwise our current training year runs from this May 1 → next Apr 15
+        start_year = date(today.year,     5, 1)
+        end_year   = date(today.year + 1, 4, 15)
+
+    # turn them into ISO strings for SQLite
+    start_iso = start_year.isoformat()
+    end_iso   = end_year.isoformat()
+
+    # now your query will actually fall into the proper window
     total = db.execute(
-        "SELECT SUM(completed_hours) AS total_hours FROM workout WHERE user_id = ?",
-        (uid,)
+        """
+        SELECT SUM(completed_hours) AS total_hours
+        FROM workout
+        WHERE user_id = ?
+        AND date BETWEEN ? AND ?
+        """,
+        (uid, start_iso, end_iso)
     ).fetchone()["total_hours"] or 0
+
 
     # 5) Aggregate by workout_type for the pie chart
     # Option A: do it in SQL
@@ -697,7 +719,7 @@ def athlete_home():
         WHERE user_id = ? AND date BETWEEN ? AND ?
         GROUP BY workout_type
         """,
-        (uid, start, end)
+        (uid, start_iso, end_iso,)
     ).fetchall()
     types = [row["type"] for row in agg]
     hours_by_type = [row["hours"] for row in agg]

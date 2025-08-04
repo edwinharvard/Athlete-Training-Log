@@ -39,7 +39,7 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Aggregate Training Data</h5>
-        <p class="card-text">Total hours: {{ workout.total_hours }}</p>
+        <p class="card-text">Training Year to Date Hours: {{ workout.total_hours }}</p>
         <div class="chart-container" style="position: relative; height:40vh; width:60vw;">
           <canvas id="workoutPieChart"></canvas>
         </div>
@@ -65,7 +65,7 @@
               {% if workouts_by_date[d] %}
                 <ul class="list-unstyled mb-0">
                   {% for w in workouts_by_date[d] %}
-                    <li><strong>{{ w.completed_hours }}h</strong> – {{ w.title or w.workout_type }}</li>
+                    <li><strong>{{ w.completed_hours }}h</strong> – {{ w.workout_type }}</li>
                   {% endfor %}
                 </ul>
               {% else %}
