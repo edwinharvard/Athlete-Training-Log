@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Update Account
+    Update Athlete Account
 {% endblock %}
 
 {% block main %}
@@ -48,8 +48,8 @@
 
         <!-- Dropdown to select athletes (only visible to coaches) -->
         <div class="mb-3">
-            <label for="athlete_ids" class="form-label">Select Athlete(s) from Dropdown</label>
-            <select id="athlete_ids" class="form-control" name="athlete_ids" multiple required>
+            <label for="athlete_ids" class="form-label">Select Athlete from Dropdown</label>
+            <select id="athlete_ids" class="form-control" name="athlete_ids" required>
                 <!-- Loop through athletes and display options for selection -->
                 {% for athlete in athletes %}
                     <option value="{{ athlete.id }}">{{ athlete.username }}</option>

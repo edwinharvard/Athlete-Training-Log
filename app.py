@@ -134,9 +134,9 @@ def logout():
     return redirect("/")
 
 
-@app.route("/update-account", methods=["GET", "POST"])
+@app.route("/update-athlete-account", methods=["GET", "POST"])
 @coach_account_required
-def update_account():
+def update_athlete_account():
     """Update account information for the logged-in user or an athlete"""
 
     if request.method == "POST":
@@ -183,7 +183,7 @@ def update_account():
                         planned_hours = ?,
                         graduation_year = ?
                     WHERE id = ?
-                """, username, password_hash, planned_hours, graduation_year, current_user)
+                """, (username, password_hash, planned_hours, graduation_year, current_user,))
                 db.commit()
             except Exception as e:
                 # Catch any database errors (e.g., if the username already exists) and show an error message
@@ -197,8 +197,8 @@ def update_account():
         db = get_db()
         # If the request method is GET, render the update account page
         # Retrieve all athletes that the current user (coach) can manage
-        athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", 0)
-        return render_template("update_account.html", athletes=athletes)
+        athletes = db.execute("SELECT id, username FROM users WHERE coach = ?", (0,)).fetchall()
+        return render_template("update_athlete_account.html", athletes=athletes)
 
 
 
@@ -469,7 +469,7 @@ def index_athlete():
 
         # 3) load workouts & user info
         workouts = db.execute(
-            "SELECT * FROM workout WHERE user_id = ? ORDER BY date ASC",
+            "SELECT * FROM workout WHERE user_id = ? ORDER BY date DESC",
             (athlete_id,)
         ).fetchall()
         user = db.execute(
