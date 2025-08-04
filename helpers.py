@@ -91,46 +91,64 @@ def coach_account_required(f):
         return f(*args, **kwargs)
     return wrapped
 
-def refresh_access_token(athlete_id):
+def refresh_access_token(athlete_id, authorization_code=None):
     db = get_db()
 
-    # Grab the refresh token from the database
-    row = db.execute(
-        "SELECT refresh_token_code FROM refresh_tokens WHERE athlete_id = ?",
-        (athlete_id,)
-    ).fetchone()
-    if not row:
-        return {"error": "Athlete not found in refresh_tokens"}
+    # If an auth code was provided, do the initial exchange…
+    if authorization_code:
+        payload = {
+            "client_id":     CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "code":          authorization_code,
+            "grant_type":    "authorization_code"
+        }
+    else:
+        # …otherwise do a refresh
+        row = db.execute(
+            "SELECT refresh_token_code FROM refresh_tokens WHERE athlete_id = ?",
+            (athlete_id,)
+        ).fetchone()
+        if not row:
+            return {"error": "Athlete not found"}
 
-    refresh_token = row["refresh_token_code"]
+        payload = {
+            "client_id":      CLIENT_ID,
+            "client_secret":  CLIENT_SECRET,
+            "grant_type":     "refresh_token",
+            "refresh_token":  row["refresh_token_code"]
+        }
 
-    # Request a new access token from Strava
     resp = requests.post(
         "https://www.strava.com/api/v3/oauth/token",
-        data={
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
-            "grant_type": "refresh_token",
-            "refresh_token": refresh_token
-        }
+        data=payload
     )
     if resp.status_code != 200:
-        return {"error": "Failed to refresh access token"}
+        return {"error": resp.text}
 
-    token_data = resp.json()
+    data = resp.json()
 
-    # Save the new access token and expiration time in the database
-    new_token = token_data["access_token"]
-    expires = token_data["expires_at"]
-
+    # Persist both tokens + scope if available
+    db.execute("""
+        INSERT OR REPLACE INTO refresh_tokens
+          (athlete_id, refresh_token_code, scope)
+        VALUES (?, ?, ?)
+    """, (
+        athlete_id,
+        data["refresh_token"],
+        data.get("scope", "")
+    ))
     db.execute("""
         INSERT OR REPLACE INTO short_lived_access_tokens
-            (athlete_id, short_lived_access_token_code, expires_at)
+          (athlete_id, access_token, expires_at)
         VALUES (?, ?, ?)
-    """, (athlete_id, new_token, expires))
+    """, (
+        athlete_id,
+        data["access_token"],
+        data["expires_at"]
+    ))
     db.commit()
 
-    return {"access_token": new_token, "expires_at": expires}
+    return data
 
 
 def get_valid_access_token(athlete_id):
