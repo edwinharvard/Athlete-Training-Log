@@ -2,6 +2,10 @@ import os
 import json
 import logging
 
+from datetime import datetime, date, timedelta  # Add datetime to imports
+from calendar import Calendar
+from flask import jsonify  # Add jsonify to imports
+
 from flask import Flask, redirect, session, current_app
 from flask import Flask, flash, redirect, render_template, request, session
 import requests
@@ -490,20 +494,20 @@ def update_workout():
 
         # Validate hours
         try:
-            if not completed_hours or int(completed_hours) <= 0:
+            if not completed_hours or float(completed_hours) <= 0:  # Changed to float
                 return apology("Completed hours must be greater than zero", 400)
 
             if planned_hours:
-                if int(planned_hours) < 0:
+                if float(planned_hours) < 0:  # Changed to float
                     return apology("Planned hours must be a positive number", 400)
             else:
                 planned_hours = 0
 
-            completed_hours = int(completed_hours)
-            planned_hours = int(planned_hours)
+            completed_hours = float(completed_hours)  # Changed to float
+            planned_hours = float(planned_hours)     # Changed to float
 
         except ValueError:
-            return apology("Both completed and planned hours must be valid numbers", 400)
+            return apology("Hours must be valid numbers", 400)
 
         # Ensure at least one field (type, title, or comments) is provided
         if not (workout_type or title or comments):
@@ -927,6 +931,11 @@ from calendar import Calendar
 from flask import render_template, session
 from helpers import get_db, login_required
 
+from datetime import date
+from calendar import Calendar
+from flask import render_template, session
+from helpers import get_db, login_required
+
 @app.route("/calendar")
 @login_required
 def calendar():
@@ -978,6 +987,7 @@ def calendar():
         week_dates=week_dates,
         month_weeks=month_weeks
     )
+
 
 @app.route("/debug-tokens")
 @login_required
