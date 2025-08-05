@@ -863,6 +863,17 @@ def athlete_home():
         (today, uid,)
     ).fetchall()
 
+    training_note = db.execute(
+        """
+        SELECT *
+        FROM training_notes
+        WHERE user_id = ?
+        AND date = ?
+        LIMIT 1
+        """,
+        (uid, today,)
+    ).fetchone()
+
     # Finally render, passing the two new lists into `workout`
     return render_template(
         "athlete_home.html",
@@ -876,7 +887,8 @@ def athlete_home():
         week_dates=week_dates,
         workouts_by_date=workouts_by_date,
         upcoming_races=upcoming_races,
-        strava_connected=strava_connected
+        strava_connected=strava_connected,
+        training_note=training_note
     )
 
 
@@ -1079,7 +1091,58 @@ def add_training_note():
 
     else:
         return render_template("add_training_note.html")
+    
+@app.route("/edit-training-note", methods=["GET", "POST"])
+@login_required
+def edit_training_note():
+    if request.method == "POST":
+        db = get_db()
+        training_note_id = request.args.get("id")  # Get training_note_id from query params
+        current_user = session["user_id"]
+        date = request.form.get("date")
+        fatigue_level = request.form.get("fatigue_level")
+        notes = request.form.get("notes")
+        mood = request.form.get("mood")
+        
+        if not date:
+            return apology("You must provide the date", 400)
+        
+        if fatigue_level:
+            try:
+                fatigue_level = float(fatigue_level)
+                if fatigue_level < 0 or fatigue_level > 5:
+                    return apology("Fatigue level must be between 1 and 5", 400)
+            except ValueError:
+                return apology("Fatigue level must be a number", 400)
+            
+        if mood:
+            try:
+                mood = float(mood)
+                if mood < 0 or mood > 5:
+                    return apology("Mood must be between 1 and 5", 400)
+            except ValueError:
+                return apology("Mood must be a number", 400)
 
+        # Update the training note in the database
+        db.execute("""
+            UPDATE training_notes 
+            SET mood = ?, fatigue_level = ?, notes = ?
+            WHERE user_id = ? AND date = ? AND id = ?
+        """, (mood, fatigue_level, notes, current_user, date, training_note_id,))
+        db.commit()
+        return redirect("/")
+
+    else:
+        db = get_db()
+        # If the method is GET, retrieve workout ID from query parameters
+        training_note_id = request.args.get("id")  # Get training_note_id from query params
+        if not training_note_id:
+            return "Error: ID is missing!", 400
+
+        training_note = db.execute(
+                "SELECT * FROM training_notes WHERE id = ?", (training_note_id,)).fetchone()
+        # Render the update workout form, passing workout_id for context
+        return render_template("edit_training_note.html", training_note=training_note)
 
 
 @app.route("/debug-tokens")

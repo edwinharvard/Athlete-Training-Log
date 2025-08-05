@@ -45,6 +45,24 @@
         </div>
       </div>
     </div>
+    <div class="col-12 col-md-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          {% if training_note %}
+          <h5 class="card-title">Daily Training Note</h5>
+          <p class="card-text flex-grow-1">Review your latest training note.</p>
+          <p class="card-text"><strong>Fatigue:</strong> {{ training_note.fatigue_level }}<br>
+          <strong>Mood:</strong> {{ training_note.mood }}<br>
+          <strong>Notes:</strong> {{ training_note.notes }}</p>
+          <a href="/edit-training-note?id={{ training_note.id }}" class="btn btn-warning mt-auto">Edit Note</a>
+          {% else %}
+          <h5 class="card-title">Add Daily Note</h5>
+          <p class="card-text flex-grow-1">Record your fatigue, mood, and training notes for the day.</p>
+          <a href="/add-training-note" class="btn btn-danger mt-auto">Add Daily Note</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Aggregate Data -->
