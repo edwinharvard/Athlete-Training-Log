@@ -922,6 +922,62 @@ def fetch_activities():
         stored_count=stored_count
     )
 
+from datetime import date
+from calendar import Calendar
+from flask import render_template, session
+from helpers import get_db, login_required
+
+@app.route("/calendar")
+@login_required
+def calendar():
+    """Render a calendar view of workouts for the current user."""
+    db = get_db()
+    uid = session["user_id"]
+
+    # Add debug logging
+    app.logger.debug(f"Fetching calendar for user {uid}")
+
+    # 1) Fetch all workouts for the user
+    workouts = db.execute(
+        "SELECT * FROM workout WHERE user_id = ? ORDER BY date DESC",
+        (uid,)
+    ).fetchall()
+    
+    app.logger.debug(f"Found {len(workouts)} workouts")
+
+    # 2) Build workouts_by_date dict
+    workouts_by_date = {}
+    for w in workouts:
+        date_str = w["date"]
+        if isinstance(date_str, str):
+            workouts_by_date.setdefault(date_str, []).append(w)
+        else:
+            workouts_by_date.setdefault(date_str.isoformat(), []).append(w)
+    
+    app.logger.debug(f"Grouped into {len(workouts_by_date)} dates")
+
+    # 3) Compute this week's dates
+    today = date.today()
+    week_dates = [today - timedelta(days=i) for i in reversed(range(7))]
+    
+    app.logger.debug(f"Week dates: {[d.isoformat() for d in week_dates]}")
+
+    # 4) Compute this month's grid
+    cal = Calendar(firstweekday=6)
+    raw_month_weeks = cal.monthdatescalendar(today.year, today.month)
+    month_weeks = [
+        [d if d.month == today.month else None for d in week]
+        for week in raw_month_weeks
+    ]
+    
+    app.logger.debug(f"Month weeks: {len(month_weeks)} weeks")
+
+    return render_template(
+        "calendar.html",
+        workouts_by_date=workouts_by_date,
+        week_dates=week_dates,
+        month_weeks=month_weeks
+    )
 
 @app.route("/debug-tokens")
 @login_required

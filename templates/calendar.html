@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+
+{% block title %}Training Calendar{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Training Calendar</h1>
+        <div class="form-inline">
+            <label for="view-range" class="mr-2 mb-0">View:</label>
+            <select id="view-range" class="form-select">
+                <option value="week" selected>Week</option>
+                <option value="month">Month</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between">
+        <a href="/" class="btn btn-outline-secondary">Back to Dashboard</a>
+      </div>
+
+    <!-- Week View -->
+    <div id="week-view" class="table-responsive mb-5">
+        <h4 class="mb-3">Current Week</h4>
+        <table class="table table-bordered text-center">
+            <thead class="table-light">
+                <tr>
+                    {% for d in week_dates %}
+                        <th>{{ d.strftime('%a %b %d') }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {% for d in week_dates %}
+                        <td class="align-top">
+                            {% set workouts = workouts_by_date.get(d.isoformat(), []) %}
+                            {% if workouts %}
+                                <ul class="list-unstyled mb-0">
+                                    {% for w in workouts %}
+                                        <li><strong>{{ '{:.2f}'.format(w.completed_hours) }}h</strong> &ndash; {{ w.workout_type }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Month View -->
+    <div id="month-view" class="table-responsive mb-5 d-none">
+        <h4 class="mb-3">Current Month</h4>
+        <table class="table table-bordered text-center">
+            <thead class="table-light">
+                <tr>
+                    {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}
+                        <th>{{ day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in month_weeks %}
+                <tr>
+                    {% for d in week %}
+                        {% if d %}
+                            <td class="align-top" style="height: 100px;">
+                                <div class="fw-bold mb-1">{{ d.day }}</div>
+                                {% set workouts = workouts_by_date.get(d.isoformat(), []) %}
+                                {% if workouts %}
+                                    <ul class="list-unstyled small mb-0">
+                                        {% for w in workouts %}
+                                            <li>{{ '{:.2f}'.format(w.completed_hours) }}h</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">&mdash;</span>
+                                {% endif %}
+                            </td>
+                        {% else %}
+                            <td class="bg-light"></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.getElementById('view-range').addEventListener('change', function(e) {
+        const weekView = document.getElementById('week-view');
+        const monthView = document.getElementById('month-view');
+        if (e.target.value === 'month') {
+            weekView.classList.add('d-none');
+            monthView.classList.remove('d-none');
+        } else {
+            monthView.classList.add('d-none');
+            weekView.classList.remove('d-none');
+        }
+    });
+</script>
+{% endblock %}
