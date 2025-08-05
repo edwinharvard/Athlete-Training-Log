@@ -220,7 +220,7 @@ def init_db():
     # Drop existing tables if they exist
     db.execute('DROP TABLE IF EXISTS refresh_tokens')
     db.execute('DROP TABLE IF EXISTS short_lived_access_tokens')
-    db.execute('DROP TABLE IF EXISTS workout')
+    #db.execute('DROP TABLE IF EXISTS workout')
     
     # Create workout table with strava_id and REAL numbers
     db.execute('''
