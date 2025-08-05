@@ -1035,6 +1035,50 @@ def add_race():
 
     else:
         return render_template("add_race.html")
+    
+
+@app.route("/add-training-note", methods=["GET", "POST"])
+@login_required
+def add_training_note():
+    if request.method == "POST":
+        db = get_db()
+        current_user = session["user_id"]
+        date = request.form.get("date")
+        fatigue_level = request.form.get("fatigue_level")
+        notes = request.form.get("notes")
+        mood = request.form.get("mood")
+        race_type = request.form.get("race_type")
+        
+        if not date:
+            return apology("You must provide the date", 400)
+        
+        if fatigue_level:
+            try:
+                fatigue_level = float(fatigue_level)
+                if fatigue_level < 0 or fatigue_level > 5:
+                    return apology("Fatigue level must be between 1 and 5", 400)
+            except ValueError:
+                return apology("Fatigue level must be a number", 400)
+            
+        if mood:
+            try:
+                mood = float(mood)
+                if mood < 0 or mood > 5:
+                    return apology("Mood must be between 1 and 5", 400)
+            except ValueError:
+                return apology("Mood must be a number", 400)
+    
+
+        # Insert the workout into the database
+        db.execute("""INSERT INTO training_notes (
+                user_id, date, mood, 
+                fatigue_level, notes) VALUES (?, ?, ?, ?, ?)""", (current_user, date, mood,
+            fatigue_level, notes,))
+        db.commit()
+        return redirect("/")
+
+    else:
+        return render_template("add_training_note.html")
 
 
 
