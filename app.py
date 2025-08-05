@@ -123,21 +123,6 @@ def strava_sync():
     return redirect("/athlete-home")
 
 
-@app.before_request
-def log_request_info():
-    app.logger.debug(f"Request URL: {request.url}")
-    app.logger.debug(f"Request Headers: {request.headers}")
-    app.logger.debug(f"Request Args: {request.args}")
-
-
-@app.after_request
-def after_request(response):
-    """Ensure responses aren't cached"""
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    return response
-
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -1099,13 +1084,11 @@ def edit_training_note():
         db = get_db()
         training_note_id = request.args.get("id")  # Get training_note_id from query params
         current_user = session["user_id"]
-        date = request.form.get("date")
         fatigue_level = request.form.get("fatigue_level")
         notes = request.form.get("notes")
         mood = request.form.get("mood")
-        
-        if not date:
-            return apology("You must provide the date", 400)
+
+        print(training_note_id)
         
         if fatigue_level:
             try:
@@ -1127,8 +1110,8 @@ def edit_training_note():
         db.execute("""
             UPDATE training_notes 
             SET mood = ?, fatigue_level = ?, notes = ?
-            WHERE user_id = ? AND date = ? AND id = ?
-        """, (mood, fatigue_level, notes, current_user, date, training_note_id,))
+            WHERE user_id = ? AND id = ?
+        """, (mood, fatigue_level, notes, current_user, training_note_id,))
         db.commit()
         return redirect("/")
 
