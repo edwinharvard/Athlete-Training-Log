@@ -38,10 +38,10 @@
   <div class="card mb-5 shadow-sm">
     <div class="card-body">
       <h5 class="card-title mb-3">Aggregate Training Data</h5>
-      <p class="mb-2"><strong>Year-to-Date Hours:</strong> {{ workout.total_hours }}</p>
+      <p class="mb-2"><strong>Year-to-Date Hours:</strong> {{ workout.total_hours|round(2) }}</p>
 
       {% if user.planned_hours|int > 0 %}
-        {% set percent = ((workout.total_hours / (user.planned_hours|int)) * 100) | round(0, 'floor') %}
+        {% set percent = (((workout.total_hours|round(2) )/ (user.planned_hours|int)) * 100) | round(0, 'floor') %}
         <div class="mb-4">
           <label class="form-label fw-semibold">Training Year Progress</label>
           <div class="progress" style="height: 1.5rem;">
@@ -78,7 +78,7 @@
               {% if workouts_by_date[d] %}
                 <ul class="list-unstyled mb-0">
                   {% for w in workouts_by_date[d] %}
-                    <li><strong>{{ w.completed_hours }}h</strong> – {{ w.workout_type }}</li>
+                    <li><strong>{{ w.completed_hours|round(2) }}h</strong> – {{ w.workout_type }}</li>
                   {% endfor %}
                 </ul>
               {% else %}
@@ -123,7 +123,16 @@
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: 'bottom' } }
+      plugins: { legend: { position: 'bottom' },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const value = context.raw.toFixed(2);
+            return `${context.label}: ${value} hours`;
+          }
+        }
+      }
+     }
     }
   });
 </script>

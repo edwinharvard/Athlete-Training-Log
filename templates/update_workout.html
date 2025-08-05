@@ -20,14 +20,14 @@
 
             <div class="mb-3">
               <label for="completed_hours" class="form-label">Completed Hours</label>
-              <input type="number" name="completed_hours" id="completed_hours" class="form-control" 
+              <input type="number" step="any" name="completed_hours" id="completed_hours" class="form-control" 
                      value="{{ workout.completed_hours }}" min="0" required>
             </div>
 
             <div class="mb-3">
               <label for="planned_hours" class="form-label">Planned Hours</label>
-              <input type="number" name="planned_hours" id="planned_hours" class="form-control" 
-                     value="{{ workout.planned_hours }}" min="0" required>
+              <input type="number" step="any" name="planned_hours" id="planned_hours" class="form-control" 
+                     value="{{ workout.planned_hours }}" min="0" >
             </div>
 
             <div class="mb-3">
@@ -38,7 +38,7 @@
 
             <div class="mb-3">
               <label for="distance" class="form-label">Distance (optional)</label>
-              <input type="number" name="distance" id="distance" class="form-control" 
+              <input type="number" step="any" name="distance" id="distance" class="form-control" 
                      value="{{ workout.distance }}" min="0">
             </div>
 
