@@ -988,6 +988,42 @@ def calendar():
         month_weeks=month_weeks
     )
 
+@app.route("/add-race", methods=["GET", "POST"])
+@login_required
+def add_race():
+    if request.method == "POST":
+        db = get_db()
+        current_user = session["user_id"]
+        race_name = request.form.get("race_name")
+        race_date = request.form.get("race_date")
+        distance = request.form.get("distance")
+        notes = request.form.get("notes")
+        goal_time = request.form.get("goal_time")
+        race_type = request.form.get("race_type")
+        
+        # Validate required fields
+        if not race_name:
+            return apology("You must provide the race name", 400)
+        if not race_date:
+            return apology("You must provide the race date", 400)
+    
+
+        # Insert the workout into the database
+        db.execute("""
+            INSERT INTO races (
+                user_id, race_name, race_date, 
+                distance, goal_time, notes, race_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            current_user, race_name, race_date,
+            distance, goal_time, notes, race_type,
+        ))
+        db.commit()
+        return redirect("/")
+
+    else:
+        return render_template("add_race.html")
+
 
 @app.route("/debug-tokens")
 @login_required
