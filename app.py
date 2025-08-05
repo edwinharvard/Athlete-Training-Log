@@ -852,6 +852,17 @@ def athlete_home():
     types = [row["type"] for row in agg]
     hours_by_type = [row["hours"] for row in agg]
 
+    upcoming_races = db.execute(
+        """
+        SELECT *
+        FROM races 
+        WHERE race_date > ?
+        AND user_id = ?
+        ORDER BY race_date ASC
+        """, 
+        (today, uid,)
+    ).fetchall()
+
     # Finally render, passing the two new lists into `workout`
     return render_template(
         "athlete_home.html",
@@ -864,6 +875,7 @@ def athlete_home():
         },
         week_dates=week_dates,
         workouts_by_date=workouts_by_date,
+        upcoming_races=upcoming_races,
         strava_connected=strava_connected
     )
 
@@ -1023,6 +1035,7 @@ def add_race():
 
     else:
         return render_template("add_race.html")
+
 
 
 @app.route("/debug-tokens")

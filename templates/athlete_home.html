@@ -12,7 +12,7 @@
     <span><strong>Planned Hours:</strong> {{ user.planned_hours }}</span>
   </div>
 
-  <!-- Action Cards -->
+  <!-- Action Cards Row 1 -->
   <div class="row g-4 mb-5">
     <div class="col-12 col-md-6">
       <div class="card h-100 shadow-sm">
@@ -34,6 +34,19 @@
     </div>
   </div>
 
+  <!-- Action Cards Row 2: Race -->
+  <div class="row g-4 mb-5">
+    <div class="col-12 col-md-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Add Race</h5>
+          <p class="card-text flex-grow-1">Record an upcoming or past race and set your goals.</p>
+          <a href="/add-race" class="btn btn-danger mt-auto">Add Race</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Aggregate Data -->
   <div class="card mb-5 shadow-sm">
     <div class="card-body">
@@ -41,7 +54,7 @@
       <p class="mb-2"><strong>Year-to-Date Hours:</strong> {{ workout.total_hours|round(2) }}</p>
 
       {% if user.planned_hours|int > 0 %}
-        {% set percent = (((workout.total_hours|round(2) )/ (user.planned_hours|int)) * 100) | round(0, 'floor') %}
+        {% set percent = ((workout.total_hours|round(2) / user.planned_hours|int) * 100)|round(0, 'floor') %}
         <div class="mb-4">
           <label class="form-label fw-semibold">Training Year Progress</label>
           <div class="progress" style="height: 1.5rem;">
@@ -90,19 +103,37 @@
       </tbody>
     </table>
   </div>
-</div>
+  <div class="row mb-5">
+    <div class="col-12 col-md-8 offset-md-2">
+      <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0">Upcoming Races</h5>
+        </div>
+        <div class="card-body">
+          {% if upcoming_races %}
+            <ul class="list-group list-group-flush">
+              {% for race in upcoming_races %}
+                <li class="list-group-item">
+                  <strong>{{ race.race_name }}</strong> &mdash; {{ race.race_date }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted mb-0">No upcoming races.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 
-<!-- Add this where you want the Strava connect button to appear -->
-<div class="strava-connect">
-  {% if not strava_connected %}
-  <a href="{{ url_for('strava_auth') }}" class="btn btn-primary">
-      Connect with Strava
-  </a>
-  {% else %}
-  <a href="{{ url_for('fetch_activities') }}" class="btn btn-success">
-      Sync Strava Activities
-  </a>
-  {% endif %}
+  <!-- Strava Connect/Sync -->
+  <div class="text-center mb-5">
+    {% if not strava_connected %}
+      <a href="{{ url_for('strava_auth') }}" class="btn btn-primary">Connect with Strava</a>
+    {% else %}
+      <a href="{{ url_for('fetch_activities') }}" class="btn btn-success">Sync Strava Activities</a>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Chart.js -->
