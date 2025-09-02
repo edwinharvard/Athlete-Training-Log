@@ -1,5 +1,20 @@
 # Harvard Nordic Ski Team Training Log
 
+
+## 🚀 What’s New & Coming Soon
+
+- **Strava Integration (NEW!)**  
+  Athletes can now connect their Strava accounts to automatically upload workout data—making logging faster, more accurate, and seamless. Just link your Strava in the app, and your activities will show up in your training log!
+
+- **Coming Soon: Automated Email Reminders & Wellness Metrics**  
+  Next up, I’m building automated email reminders for athletes to:
+  - Remind you about upcoming workouts
+  - Collect daily wellness metrics (sleep score, fatigue level, mood, homework stress, and more)
+  - Help coaches better track overall team health and balance training with life and academics
+
+*Stay tuned for these updates—making training easier, smarter, and more personalized!*
+
+
 ## Running the Application on CS50.dev
 
 ### Step-by-Step Instructions
